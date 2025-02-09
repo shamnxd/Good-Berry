@@ -1,8 +1,11 @@
-const User = require('../../models/User.js');
+const User = require('../../models/User');
+const Order = require('../../models/Order');
 
 const getAllUsers = async (req, res) => {
   try {
     const { page = 1, limit = 5, search = '' } = req.query;
+    const skip = (page - 1) * limit;
+
     const searchQuery = search
       ? {
           $or: [
@@ -12,9 +15,25 @@ const getAllUsers = async (req, res) => {
         }
       : {};
 
-    const users = await User.find(searchQuery)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+    const users = await User.aggregate([
+      { $match: searchQuery }, 
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'orders',
+        },
+      },
+      {
+        $addFields: {
+          orderCount: { $size: '$orders' }, 
+        },
+      },
+      { $project: { orders: 0 } }, 
+      { $skip: skip },
+      { $limit: parseInt(limit) },
+    ]);
 
     const totalUsers = await User.countDocuments(searchQuery);
 
@@ -24,6 +43,7 @@ const getAllUsers = async (req, res) => {
       currentPage: parseInt(page),
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 };

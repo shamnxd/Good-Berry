@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { background, product } from "@/assets/hero"
+import { useNavigate } from "react-router-dom"
 
 const banners = [
   {
@@ -28,7 +29,8 @@ const banners = [
 ]
 
 export default function HeroBanner() {
-  const [currentBanner, setCurrentBanner] = useState(0)
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (banners.length > 1) {
@@ -85,11 +87,11 @@ export default function HeroBanner() {
               <Button
                 size="lg"
                 className="hidden md:block border-2 bg-transparent text-white hover:bg-white/90 hover:text-black rounded-full h-12"
-                onClick={() => {navigator.push("/shop")}}
+                onClick={() => navigate("/shop")}
               >
                 SHOP NOW
               </Button>
-              <Button size="lg" className="bg-[#83ac2b] hover:bg-[#7AB32E] text-white rounded-full h-12" onClick={() => {navigator.push("/shop")}}>
+              <Button size="lg" className="bg-[#83ac2b] hover:bg-[#7AB32E] text-white rounded-full h-12" onClick={() => navigate("/shop")}>
                 VIEW MORE
               </Button>
             </div>

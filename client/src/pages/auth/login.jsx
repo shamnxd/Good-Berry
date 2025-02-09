@@ -17,12 +17,12 @@ const initialState = {
 
 const admin = {
   email: "admin@gmail.com",
-  password: "1",
+  password: "Admin@1234",
 };
 
 const user = {
   email: "test@gmail.com",
-  password: "Danmash665",
+  password: "Test@1234",
 };
 
 function AuthLogin() {
