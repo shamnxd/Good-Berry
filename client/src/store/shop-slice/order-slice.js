@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const api = `${import.meta.env.VITE_API_BASE}/api/user`;
+
+
 
 export const createOrder = createAsyncThunk(
   'order/createOrder',
   async (orderData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${api}/order`, { ...orderData }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.USER.ORDER, { ...orderData }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -19,7 +21,7 @@ export const fetchOrders = createAsyncThunk(
   'order/fetchOrders',
   async ({ page, limit, search, status }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/order`, {
+      const response = await api.get(API_ENDPOINTS.USER.ORDER, {
         params: { page, limit, search, status },
         withCredentials: true
       });
@@ -34,7 +36,7 @@ export const fetchOrderById = createAsyncThunk(
   'order/fetchOrderById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/order/${id}`, { withCredentials: true });
+      const response = await api.get(API_ENDPOINTS.USER.ORDER_BY_ID(id), { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -46,8 +48,8 @@ export const cancelOrderItem = createAsyncThunk(
   'order/cancelOrderItem',
   async ({ orderId, itemId, reason }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
-        `${api}/order/${orderId}/cancel`,
+      const response = await api.put(
+        `${API_ENDPOINTS.USER.BASE}/order/${orderId}/cancel`,
         { itemId, reason },
         { withCredentials: true }
       );
@@ -62,8 +64,8 @@ export const returnOrderItem = createAsyncThunk(
   'order/returnOrderItem',
   async ({ orderId, itemId, reason }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
-        `${api}/order/${orderId}/return`,
+      const response = await api.put(
+        `${API_ENDPOINTS.USER.BASE}/order/${orderId}/return`,
         { itemId, reason },
         { withCredentials: true }
       );
