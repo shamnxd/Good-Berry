@@ -9,6 +9,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { FaUserAstronaut } from "react-icons/fa";
+import MESSAGES from '../../constants/messages';
+
 
 const initialState = {
   email: "",
@@ -42,11 +44,11 @@ function AuthLogin() {
             if (data.payload.success) {
               navigate('/');
                 toast({
-                    title: "Successfully logged in with Google!"
+                    title: MESSAGES.SUCCESSFULLY_LOGGED_IN_WITH_GOOGLE
                 });
             } else {
                 toast({
-                    title: "Failed to verify login",
+                    title: MESSAGES.FAILED_TO_VERIFY_LOGIN,
                     variant: "destructive"
                 });
             }
@@ -70,8 +72,8 @@ function AuthLogin() {
 
     if (formData.email.trim() === "" && formData.password.trim() === "") {
       toast({
-        title: "Required",
-        description: "Please fill in all the required fields",
+        title: MESSAGES.REQUIRED,
+        description: MESSAGES.PLEASE_FILL_IN_ALL_THE_REQUIRED_FIELDS,
         variant: "destructive",
       });
       return;
@@ -93,7 +95,7 @@ function AuthLogin() {
         } else {
           toast({
             title: data?.payload?.message || "Something went wrong",
-            description: "Enter correct email and password",
+            description: MESSAGES.ENTER_CORRECT_EMAIL_AND_PASSWORD,
             variant: "destructive",
           });
         }
@@ -103,9 +105,7 @@ function AuthLogin() {
 
   return (
     <div
-      className="mx-auto w-full max-w-md space-y-6"
-      style={{ maxWidth: "310px" }}
-    >
+      className="mx-auto w-full max-w-[350px] px-2 space-y-6">
       <div className="text-center">
         <Button 
           className="w-full mb-4 bg-transparent hover:bg-transparent text-black outline outline-1 outline-gray-200" 
