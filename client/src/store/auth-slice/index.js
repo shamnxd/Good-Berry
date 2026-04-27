@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
+
 
 const initialState = {
     isAuthenticated: false,
@@ -11,8 +13,8 @@ export const registerUser = createAsyncThunk(
     "/auth/register",
 
     async (formData) => {
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE}/api/auth/register`,
+        const response = await api.post(
+            `${API_ENDPOINTS.AUTH.REGISTER}`,
             formData,
             {
                 withCredentials: true,
@@ -27,8 +29,8 @@ export const loginUser = createAsyncThunk(
     "/auth/login",
 
     async (formData) => {
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE}/api/auth/login`,
+        const response = await api.post(
+            `${API_ENDPOINTS.AUTH.LOGIN}`,
             formData,
             {
                 withCredentials: true,
@@ -43,8 +45,7 @@ export const checkAuth = createAsyncThunk(
     "/auth/checkauth",
 
     async () => {
-        const response = await axios.get(
-            `${import.meta.env.VITE_API_BASE}/api/auth/auth-check`,
+        const response = await api.post(`${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`, {},
             {
                 withCredentials: true,
                 headers: {
@@ -62,8 +63,8 @@ export const logoutUser = createAsyncThunk(
     "/auth/logout",
 
     async () => {
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE}/api/auth/logout`,
+        const response = await api.post(
+            `${API_ENDPOINTS.AUTH.LOGOUT}`,
             {},
             {
                 withCredentials: true,
@@ -77,8 +78,8 @@ export const logoutUser = createAsyncThunk(
 export const verifyOtp = createAsyncThunk(
   "auth/verifyOtp",
   async (otp) => {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE}/api/auth/verify`,
+    const response = await api.post(
+      `${API_ENDPOINTS.AUTH.VERIFY}`,
       otp,
       {
         withCredentials: true,
@@ -91,8 +92,8 @@ export const verifyOtp = createAsyncThunk(
 export const resendOtp = createAsyncThunk(
   "auth/resendOtp",
   async () => {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE}/api/auth/resend-otp`,
+    const response = await api.post(
+      `${API_ENDPOINTS.AUTH.RESEND_OTP}`,
       {},
       {
         withCredentials: true,
@@ -106,7 +107,7 @@ export const forgetPassword = createAsyncThunk(
   "auth/forgetPassword",
   async (email, thunkAPI) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/auth/forget-password`, { email });
+      const response = await api.post(`${API_ENDPOINTS.AUTH.FORGET_PASSWORD}`, { email });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
@@ -118,7 +119,7 @@ export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async ({ token, password }, thunkAPI) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/auth/reset-password`, { token, password });
+      const response = await api.post(`${API_ENDPOINTS.AUTH.RESET_PASSWORD}`, { token, password });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
