@@ -1,4 +1,7 @@
 const Category = require('../../models/Categorys.js');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 // Add Category
 const addCategory = async (req, res) => {
@@ -8,15 +11,15 @@ const addCategory = async (req, res) => {
     const existingCategory = await Category.findOne({ name: { $regex: `^${name.trim()}$`, $options: 'i' } });
 
     if (existingCategory) {
-      return res.json({ success: false, message: 'Category already exists' });
+      return res.json({ success: false, message: MESSAGES.CATEGORY_ALREADY_EXISTS });
     }
 
     const category = await Category.create({ name, status, image, offerPercentage });
-    return res.status(201).json({ success: true, message: 'Category created successfully', category });
+    return res.status(HTTP_STATUS.CREATED).json({ success: true, message: MESSAGES.CATEGORY_CREATED_SUCCESSFULLY, category });
 
   } catch (error) {
     console.error('Error creating category:', error.message);
-    return res.status(500).json({ success: false, message: 'Failed to create category', error: error.message });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_CREATE_CATEGORY, error: error.message });
   }
 };
 
@@ -34,14 +37,14 @@ const getAllCategories = async (req, res) => {
     const totalCategorys = await Category.countDocuments();
 
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       categories,
       totalCategorys,
       currentPage: page,
       totalPages: Math.ceil(totalCategorys / limit),
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.FAILED_TO_FETCH_CATEGORIES });
   }
 };
 
@@ -61,7 +64,7 @@ const updateCategory = async (req, res) => {
     });
 
     if (categoryExists) {
-      return res.status(400).json({ success: false, message: 'Category already exists' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: MESSAGES.CATEGORY_ALREADY_EXISTS });
     }
 
     const updatedCategory = await Category.findByIdAndUpdate(
@@ -73,16 +76,16 @@ const updateCategory = async (req, res) => {
     console.log(updatedCategory);
 
     if (!updatedCategory) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: 'Category updated successfully',
+      message: MESSAGES.CATEGORY_UPDATED_SUCCESSFULLY,
       category: updatedCategory,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update category', error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_UPDATE_CATEGORY, error: error.message });
   }
 };
 
