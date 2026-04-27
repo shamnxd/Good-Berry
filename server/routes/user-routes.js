@@ -62,7 +62,8 @@ router.delete(ROUTES.USER.WISHLIST_BY_PRODUCTID_BY_VARIANTID, wishlistController
 // Wallet
 router.get(ROUTES.USER.WALLET, walletController.getWallet);
 router.post(ROUTES.USER.WALLET_PAYMENT, walletController.handleWalletPayment);
-router.post(ROUTES.USER.WALLET_ADD_MONEY, walletController.addMoney);
+router.post(ROUTES.USER.WALLET_CREATE_RAZORPAY_ORDER, walletController.createWalletRazorpayOrder);
+router.post(ROUTES.USER.WALLET_VERIFY_PAYMENT, walletController.verifyWalletPayment);
 router.get(ROUTES.USER.WALLET_TRANSACTIONS, walletController.getTransactions);
 
 // Referral

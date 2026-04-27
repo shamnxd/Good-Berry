@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { fetchWallet, addMoneyToWallet, fetchTransactions } from "@/store/user-slice/wallet-slice";
+import { fetchWallet, createWalletRazorpayOrder, verifyWalletPayment, fetchTransactions } from "@/store/user-slice/wallet-slice";
 import { useToast } from "@/hooks/use-toast";
 import MESSAGES from '../../constants/messages';
 
@@ -26,28 +26,92 @@ const WalletPage = () => {
     dispatch(fetchTransactions());
   }, [dispatch]);
 
-  const onSubmit = (data) => {
-    const parsedData = {
-      ...data,
-      amount: parseFloat(data.amount),
-    };
-    if(parsedData.amount > 1000) {
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const onSubmit = async (data) => {
+    const amount = parseFloat(data.amount);
+    const description = data.description;
+
+    if (amount > 1000) {
       return toast({
         title: MESSAGES.AMOUNT_EXEED,
         description: MESSAGES.CANT_ADD_MORE_THAN_1000_PLEASE_TRY_AGAIN,
         variant: 'destructive',
-      }) 
-    } else if (parsedData.amount <= 0) {
+      });
+    } else if (amount <= 0) {
       return toast({
         title: MESSAGES.INVALID_AMOUNT,
         description: MESSAGES.AMOUNT_MUST_BE_GREATER_THAN_0,
         variant: 'destructive',
-      })
+      });
     }
-    if (parsedData.amount > 0) {
-      dispatch(addMoneyToWallet(parsedData)).then(() => {
-        reset();
-        setIsDialogOpen(false);
+
+    try {
+      const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+      if (!res) {
+        toast({
+          title: MESSAGES.RAZORPAY_SDK_FAILED_TO_LOAD,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const order = await dispatch(fetchWallet()).unwrap(); // Get user details if needed, but not strictly required for top-up
+      
+      const razorpayOrder = await dispatch(createWalletRazorpayOrder({ amount })).unwrap();
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "Good Berry",
+        description: "Wallet Top-up",
+        order_id: razorpayOrder.orderId,
+        handler: async function (response) {
+          try {
+            await dispatch(verifyWalletPayment({
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpaySignature: response.razorpay_signature,
+              amount,
+              description
+            })).unwrap();
+
+            toast({
+              title: MESSAGES.PAYMENT_SUCCESSFUL,
+              description: "Money added to wallet successfully",
+            });
+            setIsDialogOpen(false);
+            reset();
+            dispatch(fetchTransactions({ page: 1 }));
+          } catch (error) {
+            toast({
+              title: MESSAGES.PAYMENT_VERIFICATION_FAILED,
+              description: error.message || "Please contact support",
+              variant: "destructive",
+            });
+          }
+        },
+        theme: {
+          color: "#8AB446",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      toast({
+        title: MESSAGES.ERROR_INITIATING_PAYMENT,
+        description: error.message || "Please try again",
+        variant: "destructive",
       });
     }
   };
