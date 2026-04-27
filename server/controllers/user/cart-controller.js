@@ -3,6 +3,9 @@ const Cart = require('../../models/Cart');
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
 const Coupon = require('../../models/Coupon');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const cartController = {
   // Get cart items
@@ -20,7 +23,7 @@ const cartController = {
       res.json(filteredItems);
     } catch (error) {
       console.error('Get cart error:', error);
-      res.status(500).json({ error: 'Error fetching cart items' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_FETCHING_CART_ITEMS });
     }
   },
 
@@ -31,20 +34,20 @@ const cartController = {
       const { productId, quantity, packageSize, flavor, name, image, price, salePrice } = req.body;
 
       if (!productId || !quantity || !packageSize) {
-        return res.status(400).json({
-          error: 'Missing required fields: productId, quantity, and packageSize are required'
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          error: MESSAGES.MISSING_REQUIRED_FIELDS_PRODUCTID_QUANTITY_AND_PACKAGESIZE_ARE_REQUIRED
         });
       }
 
       const product = await Product.findOne({ _id: productId });
       if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ error: MESSAGES.PRODUCT_NOT_FOUND });
       }
 
       const variant = await Variant.findOne({ productId: productId, title : flavor });
 
       if (!variant) {
-        return res.status(400).json({ 
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
           message: `Product variant not found for product ID: ${productId}` 
         });
       }
@@ -90,7 +93,7 @@ const cartController = {
       res.json(cart.items);
     } catch (error) {
       console.error('Add to cart error:', error);
-      res.status(500).json({ error: 'Error adding item to cart' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_ADDING_ITEM_TO_CART });
     }
   },
 
@@ -135,7 +138,7 @@ const cartController = {
       res.json(cart.items);
     } catch (error) {
       console.error('Error syncing cart:', error);
-      res.status(500).json({ message: 'Failed to sync cart' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_SYNC_CART });
     }
   },
 
@@ -147,14 +150,14 @@ const cartController = {
       const { quantity, packageSize, flavor } = req.body; 
   
       if (!quantity || !packageSize || !flavor) {  
-        return res.status(400).json({
-          error: 'Missing required fields: quantity, packageSize, and flavor are required'
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          error: MESSAGES.MISSING_REQUIRED_FIELDS_QUANTITY_PACKAGESIZE_AND_FLAVOR_ARE_REQUIRED
         });
       }
   
       const cart = await Cart.findOne({ userId });
       if (!cart) {
-        return res.status(404).json({ error: 'Cart not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ error: MESSAGES.CART_NOT_FOUND });
       }
   
       const itemIndex = cart.items.findIndex(
@@ -164,7 +167,18 @@ const cartController = {
       );
   
       if (itemIndex === -1) {
-        return res.status(404).json({ error: 'Item not found in cart' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ error: MESSAGES.ITEM_NOT_FOUND_IN_CART });
+      }
+
+      // Stock check
+      const variant = await Variant.findOne({ productId: itemId, title: flavor });
+      if (variant) {
+        const packSize = variant.packSizePricing.find(p => p.size === packageSize);
+        if (packSize && quantity > packSize.quantity) {
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
+            error: `Only ${packSize.quantity} units available in stock.` 
+          });
+        }
       }
   
       cart.items[itemIndex].quantity = quantity;
@@ -173,7 +187,7 @@ const cartController = {
       res.json(cart.items);
     } catch (error) {
       console.error('Update quantity error:', error);
-      res.status(500).json({ error: 'Error updating item quantity' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_UPDATING_ITEM_QUANTITY });
     }
   },
 
@@ -185,14 +199,14 @@ const cartController = {
     const { packageSize, flavor } = req.body; 
 
     if (!packageSize || !flavor) { 
-      return res.status(400).json({
-        error: 'Missing required fields: packageSize and flavor'
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: MESSAGES.MISSING_REQUIRED_FIELDS_PACKAGESIZE_AND_FLAVOR
       });
     }
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({ error: 'Cart not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: MESSAGES.CART_NOT_FOUND });
     }
 
     cart.items = cart.items.filter(
@@ -205,7 +219,7 @@ const cartController = {
     res.json({ itemId, packageSize, flavor }); 
   } catch (error) {
     console.error('Remove item error:', error);
-    res.status(500).json({ error: 'Error removing item from cart' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_REMOVING_ITEM_FROM_CART });
   }
 },
 
@@ -220,59 +234,73 @@ const cartController = {
         await cart.save();
       }
 
-      res.json({ message: 'Cart cleared successfully' });
+      res.json({ message: MESSAGES.CART_CLEARED_SUCCESSFULLY });
     } catch (error) {
       console.error('Clear cart error:', error);
-      res.status(500).json({ error: 'Error clearing cart' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_CLEARING_CART });
     }
   },
 
-  // Controller: checkQuantity
- checkQuantity : async (req, res) => {
-  try {
-    const { productId, packageSize, flavor } = req.body;
+  // Unified Controller: checkQuantity (handles both single and bulk)
+  checkQuantity: async (req, res) => {
+    try {
+      const { items, productId, packageSize, flavor } = req.body;
+      
+      // Determine if we are doing bulk or single
+      const inputItems = items && Array.isArray(items) 
+        ? items 
+        : (productId ? [{ productId, packageSize, flavor }] : []);
 
-    if (!productId || !packageSize || !flavor) {
-      return res.status(400).json({ error: 'Missing required fields: productId, packageSize, and flavor are required' });
-    }
-
-    const variant = await Variant.findOne({ productId, title: flavor });
-    if (!variant) {
-      return res.status(404).json({ error: 'Variant not found' });
-    }
-
-    const packSize = variant.packSizePricing.find(pack => pack.size === packageSize);
-    if (!packSize) {
-      return res.status(404).json({ error: 'Package size not found' });
-    }
-
-    let currentCartQuantity = 0;
-    if (req.user) {
-      const cart = await Cart.findOne({ userId: req.user.id });
-      if (cart) {
-        const cartItem = cart.items.find(item => 
-          item.productId.toString() === productId &&
-          item.packageSize === packageSize &&
-          item.flavor === flavor
-        );
-        if (cartItem) {
-          currentCartQuantity = cartItem.quantity;
-        }
+      if (inputItems.length === 0) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: MESSAGES.NO_ITEMS_PROVIDED_FOR_QUANTITY_CHECK });
       }
+
+      const cart = req.user ? await Cart.findOne({ userId: req.user.id }) : null;
+
+      const results = await Promise.all(inputItems.map(async (item) => {
+        const { productId: pId, packageSize: pSize, flavor: fTitle } = item;
+        
+        try {
+          const variant = await Variant.findOne({ productId: pId, title: fTitle });
+          if (!variant) return { productId: pId, packageSize: pSize, flavor: fTitle, error: MESSAGES.VARIANT_NOT_FOUND };
+
+          const packSize = variant.packSizePricing.find(pack => pack.size === pSize);
+          if (!packSize) return { productId: pId, packageSize: pSize, flavor: fTitle, error: MESSAGES.PACKAGE_SIZE_NOT_FOUND };
+
+          let currentCartQuantity = 0;
+          if (cart) {
+            const cartItem = cart.items.find(ci => 
+              ci.productId.toString() === pId.toString() &&
+              ci.packageSize === pSize &&
+              ci.flavor === fTitle
+            );
+            if (cartItem) currentCartQuantity = cartItem.quantity;
+          }
+
+          return {
+            productId: pId,
+            packageSize: pSize,
+            flavor: fTitle,
+            quantity: packSize.quantity,
+            availableQuantity: Math.max(0, packSize.quantity - currentCartQuantity),
+            currentCartQuantity
+          };
+        } catch (err) {
+          return { productId: pId, packageSize: pSize, flavor: fTitle, error: MESSAGES.INTERNAL_ERROR };
+        }
+      }));
+
+      // Return array for bulk, single object for single request (if 'items' was not provided)
+      if (items && Array.isArray(items)) {
+        res.json(results);
+      } else {
+        res.json(results[0]);
+      }
+    } catch (error) {
+      console.error('Check quantity error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_CHECKING_QUANTITY });
     }
-
-    const availableQuantity = Math.max(0, packSize.quantity - currentCartQuantity);
-
-    res.json({ 
-      quantity: packSize.quantity,
-      availableQuantity: availableQuantity,
-      currentCartQuantity: currentCartQuantity
-    });
-  } catch (error) {
-    console.error('Check quantity error:', error);
-    res.status(500).json({ error: 'Error checking quantity' });
   }
-}
 };
 
 module.exports = cartController;
