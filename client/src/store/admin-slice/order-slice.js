@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const api = `${import.meta.env.VITE_API_BASE}/api/admin`;
+
+
 
 export const fetchAllOrders = createAsyncThunk(
   'adminOrder/fetchAllOrders',
   async ({ page, limit, search, status }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/orders`, {
+      const response = await api.get(API_ENDPOINTS.ADMIN.ORDERS, {
         params: { page, limit, search, status },
         withCredentials: true
       });
@@ -22,7 +24,7 @@ export const fetchOrderById = createAsyncThunk(
   'adminOrder/fetchOrderById',
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/orders/${orderId}`, { withCredentials: true });
+      const response = await api.get(`${API_ENDPOINTS.ADMIN.BASE}/orders/${orderId}`, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -34,8 +36,8 @@ export const updateOrderItemStatus = createAsyncThunk(
   'adminOrder/updateOrderItemStatus',
   async ({ orderId, productId, updates }, { rejectWithValue }) => {
     try {
-      const response = await axios.patch(
-        `${api}/orders/${orderId}/items/${productId}`,
+      const response = await api.patch(
+        API_ENDPOINTS.ADMIN.ORDER_ITEM_STATUS(orderId, productId),
         updates,
         { withCredentials: true }
       );
@@ -50,8 +52,8 @@ export const approveReturnRequest = createAsyncThunk(
   'adminOrder/approveReturnRequest',
   async ({ orderId, productId }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
-        `${api}/orders/${orderId}/items/${productId}/approve-return`,
+      const response = await api.put(
+        API_ENDPOINTS.ADMIN.APPROVE_RETURN(orderId, productId),
         {},
         { withCredentials: true }
       );
@@ -66,8 +68,8 @@ export const rejectReturnRequest = createAsyncThunk(
   'adminOrder/rejectReturnRequest',
   async ({ orderId, productId }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(
-        `${api}/orders/${orderId}/items/${productId}/reject-return`,
+      const response = await api.put(
+        API_ENDPOINTS.ADMIN.REJECT_RETURN(orderId, productId),
         {},
         { withCredentials: true }
       );
