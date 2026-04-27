@@ -37,7 +37,8 @@ import { z } from "zod";
 import { createOrder } from "@/store/shop-slice/order-slice";
 import { clearCart, checkQuantity } from "@/store/shop-slice/cart-slice";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
 const addressSchema = z.object({
   street: z.string().min(1, "Street address is required"),
@@ -111,7 +112,7 @@ export default function CheckoutPage() {
   const inStockItems = items.filter(
     (item) => getAvailableQuantity(item) > 0 && item.quantity <= getAvailableQuantity(item)
   );
-  const BASE_URL = import.meta.env.VITE_API_BASE
+
 
   const { coupon } = useSelector((state) => state.shop);
   const subtotal = inStockItems.reduce(
@@ -269,8 +270,8 @@ export default function CheckoutPage() {
       const order = await dispatch(createOrder(orderData)).unwrap();
       setOrderDetails(order);
 
-      const razorpayOrder = await axios.post(
-        `${BASE_URL}/api/user/create-razorpay-order`,
+      const razorpayOrder = await api.post(
+        API_ENDPOINTS.USER.CREATE_RAZORPAY_ORDER,
         {
           orderId: order._id,
         },
@@ -288,8 +289,8 @@ export default function CheckoutPage() {
         order_id: razorpayOrder.data.orderId,
         handler: async function (response) {
           try {
-            const { data } = await axios.post(
-              `${BASE_URL}/api/user/verify-payment`,
+            const { data } = await api.post(
+              API_ENDPOINTS.USER.VERIFY_PAYMENT,
               {
                 orderCreationId: razorpayOrder.data.orderId,
                 razorpayPaymentId: response.razorpay_payment_id,
@@ -323,8 +324,8 @@ export default function CheckoutPage() {
         modal: {
           ondismiss: async function () {
             try {
-              await axios.post(
-                `${BASE_URL}/api/user/payment-failure`,
+              await api.post(
+                API_ENDPOINTS.USER.PAYMENT_FAILURE,
                 {
                   orderId: order._id,
                 },
@@ -399,8 +400,8 @@ export default function CheckoutPage() {
       const order = await dispatch(createOrder(orderData)).unwrap();
       setOrderDetails(order);
 
-      const { data } = await axios.post(
-        `${BASE_URL}/api/user/wallet-payment`,
+      const { data } = await api.post(
+        API_ENDPOINTS.USER.WALLET_PAYMENT,
         {
           orderId: order._id,
         },

@@ -39,7 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import OrderSuccess from "./success-order";
 import PropTypes from "prop-types";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -531,7 +532,7 @@ export default function OrderView() {
         return;
       }
 
-      const razorpayOrder = await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/create-razorpay-order`, {
+      const razorpayOrder = await api.post(API_ENDPOINTS.USER.CREATE_RAZORPAY_ORDER, {
         orderId: order._id
       }, {
         withCredentials: true
@@ -546,7 +547,7 @@ export default function OrderView() {
         order_id: razorpayOrder.data.orderId,
         handler: async function (response) {
           try {
-            const { data } = await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/verify-payment`, {
+            const { data } = await api.post(API_ENDPOINTS.USER.VERIFY_PAYMENT, {
               orderCreationId: razorpayOrder.data.orderId,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
@@ -574,7 +575,7 @@ export default function OrderView() {
         modal: {
           ondismiss: async function () {
             try {
-              await axios.post(`${import.meta.env.VITE_API_BASE}/api/user/payment-failure`, {
+              await api.post(API_ENDPOINTS.USER.PAYMENT_FAILURE, {
                 orderId: order._id
               }, {
                 withCredentials: true
