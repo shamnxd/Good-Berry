@@ -1,17 +1,20 @@
 const Wallet = require('../../models/Wallet');
 const Order = require('../../models/Order');
 const Cart = require('../../models/Cart');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const walletController = {
   getWallet: async (req, res) => {
     try {
       const wallet = await Wallet.findOne({ userId: req.user.id });
       if (!wallet) {
-        return res.status(404).json({ message: 'Wallet not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.WALLET_NOT_FOUND });
       }
       res.json(wallet);
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching wallet', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_FETCHING_WALLET, error: error.message });
     }
   },
 
@@ -31,7 +34,7 @@ const walletController = {
       await wallet.save();
       res.json(wallet);
     } catch (error) {
-      res.status(500).json({ message: 'Error adding money to wallet', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_ADDING_MONEY_TO_WALLET, error: error.message });
     }
   },
 
@@ -40,7 +43,7 @@ const walletController = {
       const { page = 1, limit = 10 } = req.query;
       const wallet = await Wallet.findOne({ userId: req.user.id });
       if (!wallet) {
-        return res.status(404).json({ message: 'Wallet not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.WALLET_NOT_FOUND });
       }
 
       const transactions = wallet.transactions.slice((page - 1) * limit, page * limit);
@@ -52,7 +55,7 @@ const walletController = {
         currentPage: parseInt(page),
       });
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching transactions', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_FETCHING_TRANSACTIONS, error: error.message });
     }
   },
 
@@ -61,12 +64,12 @@ const walletController = {
         const { orderId } = req.body;
         const order = await Order.findById(orderId).populate('userId');
         if (!order) {
-          return res.status(404).json({ message: 'Order not found' });
+          return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
         }
   
         const wallet = await Wallet.findOne({ userId: order.userId._id });
         if (!wallet || wallet.balance < order.total) {
-          return res.status(400).json({ message: 'Insufficient wallet balance' });
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.INSUFFICIENT_WALLET_BALANCE });
         }
   
         wallet.balance -= order.total;
@@ -85,10 +88,10 @@ const walletController = {
         cart.items = [];
         await cart.save();
   
-        res.json({ message: 'Payment successful', orderId: order.orderId });
+        res.json({ message: MESSAGES.PAYMENT_SUCCESSFUL, orderId: order.orderId });
       } catch (error) {
         console.error('Error handling wallet payment:', error);
-        res.status(500).json({ message: 'Error handling wallet payment', error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_HANDLING_WALLET_PAYMENT, error: error.message });
       }
     }
 };
