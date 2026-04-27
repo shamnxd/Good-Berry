@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Card,
   CardContent,
   CardFooter,
@@ -33,7 +35,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createOrder } from "@/store/shop-slice/order-slice";
-import { clearCart } from "@/store/shop-slice/cart-slice";
+import { clearCart, checkQuantity } from "@/store/shop-slice/cart-slice";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -71,16 +73,54 @@ export default function CheckoutPage() {
 
   const items = useSelector((state) => state.cart.items);
   const { isLoading } = useSelector((state) => state.order);
+  const [availableQuantities, setAvailableQuantities] = useState({});
+
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const fetchAllQuantities = async () => {
+      try {
+        const result = await dispatch(
+          checkQuantity(
+            items.map((item) => ({
+              productId: typeof item.productId === 'object' ? item.productId._id : item.productId,
+              packageSize: item.packageSize,
+              flavor: item.flavor,
+            }))
+          )
+        ).unwrap();
+
+        const quantities = {};
+        (Array.isArray(result.data) ? result.data : [result.data]).forEach((q) => {
+          quantities[`${q.productId}-${q.packageSize}-${q.flavor}`] = q.availableQuantity ?? q.quantity ?? 0;
+        });
+        setAvailableQuantities(quantities);
+      } catch (error) {
+        console.error("Error fetching quantities:", error);
+      }
+    };
+
+    fetchAllQuantities();
+  }, [dispatch]); // only run once on mount — items are stable at checkout entry
+
+  const getAvailableQuantity = (item) => {
+    const pid = typeof item.productId === 'object' ? item.productId._id : item.productId;
+    return availableQuantities[`${pid}-${item.packageSize}-${item.flavor}`] || 0;
+  };
+
+  const inStockItems = items.filter(
+    (item) => getAvailableQuantity(item) > 0 && item.quantity <= getAvailableQuantity(item)
+  );
   const BASE_URL = import.meta.env.VITE_API_BASE
 
   const { coupon } = useSelector((state) => state.shop);
-  const subtotal = items.reduce(
+  const subtotal = inStockItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
   const discount =
     subtotal -
-    items.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
+    inStockItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
 
   const {
     register,
@@ -155,7 +195,7 @@ export default function CheckoutPage() {
           setIsEditing(null);
           setShowForm(false);
           toast({
-            title: "Address updated successfully",
+            title: MESSAGES.ADDRESS_UPDATED_SUCCESSFULLY,
           });
         });
     } else {
@@ -164,7 +204,7 @@ export default function CheckoutPage() {
         .then(() => {
           setShowForm(false);
           toast({
-            title: "Address added successfully",
+            title: MESSAGES.ADDRESS_ADDED_SUCCESSFULLY,
           });
         });
     }
@@ -204,7 +244,7 @@ export default function CheckoutPage() {
 
       if (!res) {
         toast({
-          title: "Razorpay SDK failed to load",
+          title: MESSAGES.RAZORPAY_SDK_FAILED_TO_LOAD,
           variant: "destructive",
         });
         return;
@@ -219,7 +259,7 @@ export default function CheckoutPage() {
           couponId: coupon?.couponId,
           discount: coupon?.discount,
         },
-        items: items,
+        items: inStockItems,
         subtotal: summary.subtotal,
         shippingCost: summary.shipping,
         couponDiscount: summary.coupon,
@@ -266,14 +306,14 @@ export default function CheckoutPage() {
             dispatch(clearCart());
 
             toast({
-              title: "Payment successful",
+              title: MESSAGES.PAYMENT_SUCCESSFUL,
               description: `Order ID: ${data.orderId}`,
             });
           } catch (error) {
             console.error("Error verifying payment:", error);
             setLoading(false);
             toast({
-              title: "Payment verification failed",
+              title: MESSAGES.PAYMENT_VERIFICATION_FAILED,
               description:
               error?.message || "Please contact support",
               variant: "destructive",
@@ -295,15 +335,15 @@ export default function CheckoutPage() {
               navigate(`/account/order/${order.orderId}`);
               dispatch(clearCart());
               toast({
-                title: "Payment cancelled",
-                description: "Your payment was cancelled. Please try again.",
+                title: MESSAGES.PAYMENT_CANCELLED,
+                description: MESSAGES.YOUR_PAYMENT_WAS_CANCELLED_PLEASE_TRY_AGAIN,
                 variant: "destructive",
               });
             } catch (error) {
               console.error("Error handling payment failure:", error);
               setLoading(false);
               toast({
-                title: "Error handling payment failure",
+                title: MESSAGES.ERROR_HANDLING_PAYMENT_FAILURE,
                 description: error.message || "Please contact support",
                 variant: "destructive",
               });
@@ -329,7 +369,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Error initiating Razorpay payment:", error);
       toast({
-        title: "Error initiating payment",
+        title: MESSAGES.ERROR_INITIATING_PAYMENT,
         description: error.message || "Please try again",
         variant: "destructive",
       });
@@ -349,7 +389,7 @@ export default function CheckoutPage() {
           couponId: coupon?.couponId,
           discount: coupon?.discount,
         },
-        items: items,
+        items: inStockItems,
         subtotal: summary.subtotal,
         shippingCost: summary.shipping,
         couponDiscount: summary.coupon,
@@ -373,13 +413,13 @@ export default function CheckoutPage() {
       dispatch(clearCart());
 
       toast({
-        title: "Payment successful",
+        title: MESSAGES.PAYMENT_SUCCESSFUL,
         description: `Order ID: ${data.orderId}`,
       });
     } catch (error) {
       console.error("Error handling wallet payment:", error.response.data.message);
       toast({
-        title: "Payment failed",
+        title: MESSAGES.PAYMENT_FAILED,
         description: error?.response?.data?.message || "Please contact support",
         variant: "destructive",
       });
@@ -405,7 +445,7 @@ export default function CheckoutPage() {
         couponId: coupon?.couponId,
         discount: coupon?.discount,
       },
-      items: items,
+      items: inStockItems,
     };
 
     dispatch(createOrder(orderData))
@@ -417,7 +457,7 @@ export default function CheckoutPage() {
       })
       .catch((error) => {
         toast({
-          title: "Error placing order",
+          title: MESSAGES.ERROR_PLACING_ORDER,
           description: error.message,
           variant: "destructive",
         });
@@ -436,21 +476,21 @@ export default function CheckoutPage() {
     {
       id: "free",
       name: "Regular shipment",
-      description: "Free delivery",
+      description: MESSAGES.FREE_DELIVERY,
       price: 0,
     },
     {
       id: "express",
       name: "Express delivery",
-      description: "Get your delivery as soon as possible",
+      description: MESSAGES.GET_YOUR_DELIVERY_AS_SOON_AS_POSSIBLE,
       price: 99,
     },
     {
       id: "scheduled",
       name: "Scheduled delivery",
-      description: "Pick a date when you want to get your delivery",
+      description: MESSAGES.PICK_A_DATE_WHEN_YOU_WANT_TO_GET_YOUR_DELIVERY,
       date: "Select Date →",
-      price: 150,
+      price: 99,
       disabled: true,
     },
   ];
@@ -472,69 +512,63 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto px-4 py-4 lg:py-10">
       <Tabs
         value={activeStep}
-        className="w-full max-w-6xl mx-auto bg-transparent"
+        className="w-full max-w-[550px] mx-auto bg-transparent"
       >
-        <TabsList className="grid w-full grid-cols-3 mb-8 bg-transparent">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto">
           <TabsTrigger
             value="address"
-            className="data-[state=active]:shadow-none"
+            className="data-[state=active]:shadow-none flex flex-col gap-1 py-2"
           >
-            <span className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  activeStep === "address"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <MapPin className="w-4 h-4" />
-              </div>
-              <span className="hidden sm:inline">Address</span>
-            </span>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                activeStep === "address"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+            </div>
+            <span className={`text-[11px] font-medium ${activeStep === "address" ? "text-primary" : "text-gray-500"}`}>Address</span>
           </TabsTrigger>
           <TabsTrigger
             value="shipping"
-            className="data-[state=active]:shadow-none"
+            className="data-[state=active]:shadow-none flex flex-col gap-1 py-2"
           >
-            <span className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  activeStep === "shipping"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <ShoppingCart className="w-4 h-4" />
-              </div>
-              <span className="hidden sm:inline">Shipping</span>
-            </span>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                activeStep === "shipping"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+            <span className={`text-[11px] font-medium ${activeStep === "shipping" ? "text-primary" : "text-gray-500"}`}>Shipping</span>
           </TabsTrigger>
           <TabsTrigger
             value="payment"
-            className="data-[state=active]:shadow-none"
+            className="data-[state=active]:shadow-none flex flex-col gap-1 py-2"
           >
-            <span className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  activeStep === "payment"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <Wallet className="w-4 h-4" />
-              </div>
-              <span className="hidden sm:inline">Payment</span>
-            </span>
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                activeStep === "payment"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              <Wallet className="w-4 h-4" />
+            </div>
+            <span className={`text-[11px] font-medium ${activeStep === "payment" ? "text-primary" : "text-gray-500"}`}>Payment</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="address">
-          <div className="w-full space-y-6 p-5 flex justify-center">
-            <Card className="lg:px-6 px-4 w-[900px]">
-              <CardHeader className="px-0 flex-row justify-between items-center">
+          <div className="w-full max-w-3xl mx-auto space-y-6  py-2 px-3">
+            <div className="w-full">
+              <div className="flex-row flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium">Shipping Address</h2>
                 {!showForm && (
                   <Button
@@ -549,8 +583,7 @@ export default function CheckoutPage() {
                     <Plus className="h-5 w-5" />
                   </Button>
                 )}
-              </CardHeader>
-              <CardContent className="px-0">
+              </div>
                 {showForm ? (
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
@@ -696,7 +729,7 @@ export default function CheckoutPage() {
                       setSelectedAddress(value);
                       dispatch(setDefault(value)).then(() => {
                         toast({
-                          title: "Default address updated successfully",
+                          title: MESSAGES.DEFAULT_ADDRESS_UPDATED_SUCCESSFULLY,
                         });
                       });
                     }}
@@ -738,222 +771,117 @@ export default function CheckoutPage() {
                     ))}
                   </RadioGroup>
                 )}
-              </CardContent>
-              <CardFooter className="flex justify-between py-4 px-0">
-                <Button variant="outline" onClick={() => navigate(-1)}>
-                  Back
-                </Button>
-                <Button onClick={handleNext} disabled={addresses.length === 0}>
-                  Next
-                </Button>
-              </CardFooter>
-            </Card>
+              <div className="flex justify-between pt-6">
+                <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+                <Button onClick={handleNext} disabled={addresses.length === 0}>Next</Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="shipping">
-          <div className="w-full space-y-6 p-5 flex justify-center">
-            <Card className="lg:px-6 px-4 w-[900px]">
-              <CardHeader className="px-0">
-                <h2 className="text-lg font-medium">Select Shipping</h2>
-              </CardHeader>
-              <RadioGroup
-                value={selectedShipping}
-                onValueChange={setSelectedShipping}
-                className="space-y-4"
-              >
-                {shippingMethods.map((method) => (
-                  <Card key={method.id} className="bg-gray-50 border-0">
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem
-                          value={method.id}
-                          id={method.id}
-                          disabled={method.disabled}
-                        />
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`font-medium ${
-                                method.disabled ? "text-gray-400" : ""
-                              }`}
-                            >
-                              {method.name}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 text-xs font-semibold text-primary-foreground rounded ${
-                                method.disabled ? "bg-gray-400" : "bg-primary"
-                              }`}
-                            >
-                              {method.price > 0 ? `₹${method.price}` : "Free"}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-sm ${
-                              method.disabled
-                                ? "text-gray-300"
-                                : "text-gray-600"
-                            } `}
-                          >
-                            {method.description}
+          <div className="w-full max-w-3xl mx-auto space-y-4 py-2 px-3">
+            <h2 className="text-lg font-medium">Select Shipping</h2>
+            <RadioGroup
+              value={selectedShipping}
+              onValueChange={setSelectedShipping}
+              className="space-y-3"
+            >
+              {shippingMethods.map((method) => (
+                <Card key={method.id} className="bg-gray-50 border-0">
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <RadioGroupItem
+                        value={method.id}
+                        id={method.id}
+                        disabled={method.disabled}
+                      />
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-medium ${method.disabled ? "text-gray-400" : ""}`}>
+                            {method.name}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs font-semibold text-primary-foreground rounded ${method.disabled ? "bg-gray-400" : "bg-primary"}`}>
+                            {method.price > 0 ? `₹${method.price}` : "Free"}
                           </span>
                         </div>
+                        <span className={`text-sm ${method.disabled ? "text-gray-300" : "text-gray-600"}`}>
+                          {method.description}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </RadioGroup>
-
-              <CardFooter className="flex justify-between pt-9 px-0">
-                <Button variant="outline" onClick={handleBack}>
-                  Back
-                </Button>
-                <Button onClick={handleNext}>Next</Button>
-              </CardFooter>
-            </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </RadioGroup>
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" onClick={handleBack}>Back</Button>
+              <Button onClick={handleNext}>Next</Button>
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="payment">
-          <div className="w-full space-y-6 p-5 flex justify-center">
-            <Card className="lg:px-6 px-4 w-[900px]">
-              <CardContent className="p-0 py-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">Address</div>
-                        <div className="text-sm text-muted-foreground">
-                          {selectedAddressDetails ? (
-                            <>
-                              {selectedAddressDetails.street},{" "}
-                              {selectedAddressDetails.city},
-                              {selectedAddressDetails.state}{" "}
-                              {selectedAddressDetails.zip}
-                            </>
-                          ) : (
-                            "No address selected"
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium">
-                          Shipment method
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {selectedShippingDetails?.name ||
-                            "No shipping method selected"}
-                          {selectedShippingDetails?.price > 0 &&
-                            ` - $${selectedShippingDetails.price}`}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm font-semibold">
-                          <span>Subtotal</span>
-                          <span>₹{summary.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Discount</span>
-                          <span>-₹{summary.discount.toFixed(2)}</span>
-                        </div>
-                        {coupon.discount && (
-                          <div className="flex justify-between text-sm">
-                            <span>Coupon</span>
-                            <span>-₹{summary.coupon.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm">
-                          <span>Shipping & Handling</span>
-                          <span>₹{summary.shipping.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold">
-                          <span>Total</span>
-                          <span className="text-[#8ec743]">
-                            ₹{summary.total.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+          <div className="w-full max-w-3xl mx-auto py-2 px-3">
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="border shadow-sm border-none shadow-none">
+                <CardHeader className="!pb-3 p-0">
+                  <CardTitle className="text-base">Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-0 pb-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Address</div>
+                    <div className="text-sm">
+                      {selectedAddressDetails ? (
+                        <>{selectedAddressDetails.street}, {selectedAddressDetails.city}, {selectedAddressDetails.state} {selectedAddressDetails.zip}</>
+                      ) : ("No address selected")}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Shipping</div>
+                    <div className="text-sm">
+                      {selectedShippingDetails?.name || "No shipping method selected"}
+                      {selectedShippingDetails?.price > 0 && ` - ₹${selectedShippingDetails.price}`}
+                    </div>
+                  </div>
+                  <div className="border-t pt-3 space-y-1.5">
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">Subtotal</span><span>₹{summary.subtotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">Discount</span><span>-₹{summary.discount.toFixed(2)}</span></div>
+                    {coupon.discount && (<div className="flex justify-between text-sm"><span className="text-gray-600">Coupon</span><span>-₹{summary.coupon.toFixed(2)}</span></div>)}
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">Shipping</span><span>₹{summary.shipping.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold border-t pt-1.5"><span>Total</span><span className="text-[#8ec743]">₹{summary.total.toFixed(2)}</span></div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Payment</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <RadioGroup
-                        value={selectedPayment}
-                        onValueChange={setSelectedPayment}
-                        className="space-y-4"
-                      >
-                        {[
-                          {
-                            id: "cod",
-                            name: "Cash on Delivery",
-                            disabled: summary.total > 1000,
-                          },
-                          { id: "upi", name: "Razorpay", disabled: false },
-                          {
-                            id: "wallet",
-                            name: "Pay with Wallet",
-                            disabled: false,
-                          },
-                        ].map((payment) => (
-                          <Card
-                            key={payment.id}
-                            className="bg-gray-50 border-0"
-                          >
-                            <CardContent className="flex items-center justify-between p-4">
-                              <div className="flex items-center gap-3">
-                                <RadioGroupItem
-                                  value={payment.id}
-                                  id={payment.id}
-                                  disabled={payment.disabled}
-                                />
-                                <div className="flex flex-col">
-                                  <div
-                                    className={`font-medium ${
-                                      payment.disabled ? "text-gray-400" : ""
-                                    }`}
-                                  >
-                                    {payment.name}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </RadioGroup>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button variant="outline" onClick={handleBack}>
-                        Back
-                      </Button>
-                      <Button
-                        variant="default"
-                        disabled={summary.total === 0 || !selectedPayment}
-                        onClick={handlePay}
-                      >
-                        {isLoading || loading ? (
-                          <>
-                            <Loader2 className="animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard />
-                            Proceed to Pay
-                          </>
-                        )}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="border-none shadow-none">
+                <CardHeader className="!pb-3 p-0">
+                  <CardTitle className="text-base">Payment Method</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 !pb-5 p-0">
+                  <RadioGroup value={selectedPayment} onValueChange={setSelectedPayment} className="space-y-3">
+                    {[
+                      { id: "cod", name: "Cash on Delivery", disabled: summary.total > 1000 },
+                      { id: "upi", name: "Razorpay", disabled: false },
+                      { id: "wallet", name: "Pay with Wallet", disabled: false },
+                    ].map((payment) => (
+                      <Card key={payment.id} className="bg-gray-50 border-0">
+                        <CardContent className="flex items-center p-3 gap-3">
+                          <RadioGroupItem value={payment.id} id={payment.id} disabled={payment.disabled} />
+                          <div className={`font-medium text-sm ${payment.disabled ? "text-gray-400" : ""}`}>{payment.name}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </RadioGroup>
+                </CardContent>
+                <CardFooter className="flex p-0 justify-between pt-3">
+                  <Button variant="outline" onClick={handleBack}>Back</Button>
+                  <Button variant="default" disabled={summary.total === 0 || !selectedPayment} onClick={handlePay}>
+                    {isLoading || loading ? (<><Loader2 className="animate-spin" />Processing...</>) : (<><CreditCard />Proceed to Pay</>)}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
