@@ -1,37 +1,38 @@
 const express = require("express");
+const ROUTES = require('../constants/routes');
+
 const router = express.Router();
 const authController = require("../controllers/auth/auth-controller");
 const passport = require("passport");
 
-router.post("/register", authController.register);
-router.post("/login", authController.login);
-router.post("/logout", authController.logout);
-router.post("/verify", authController.verify);
-router.post("/resend-otp", authController.resendOtp);
-router.post('/forget-password', authController.forgetPassword);
-router.post('/reset-password', authController.resetPassword);
+router.post(ROUTES.AUTH.REGISTER, authController.register);
+router.post(ROUTES.AUTH.LOGIN, authController.login);
+router.post(ROUTES.AUTH.LOGOUT, authController.logout);
+router.post(ROUTES.AUTH.VERIFY, authController.verify);
+router.post(ROUTES.AUTH.RESEND_OTP, authController.resendOtp);
+router.post(ROUTES.AUTH.FORGET_PASSWORD, authController.forgetPassword);
+router.post(ROUTES.AUTH.RESET_PASSWORD, authController.resetPassword);
 
-router.get("/set", authController.set);
+router.get(ROUTES.AUTH.SET, authController.set);
 
 // Google OAuth routes
-router.get("/google",
+router.get(ROUTES.AUTH.GOOGLE,
     passport.authenticate('google', {
         scope: ['profile', 'email'],
         prompt: 'select_account'
     })
 );
 
-router.get("/google/callback",
+router.get(ROUTES.AUTH.GOOGLE_CALLBACK,
     passport.authenticate('google', {
-      failureRedirect: 'http://localhost:5173/login?error=google_auth_failed',
+      failureRedirect: `${process.env.CLIENT_URL}/login?error=google_auth_failed`,
       session: false
     }),
     authController.googleAuth
 );
 
-router.get("/auth-check", authController.authMiddleware, (req, res) => {
-    const user = req.user;
-    res.status(200).json({ success: true, message: "Authenticated user!", user });
-});
+
+
+router.post(ROUTES.AUTH.REFRESH_TOKEN, authController.refreshToken);
 
 module.exports = router;
