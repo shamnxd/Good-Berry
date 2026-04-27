@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
+
 
 const initialState = {
     user: null,
@@ -12,7 +14,7 @@ const initialState = {
     error: null,
 };
 
-const api = `${import.meta.env.VITE_API_BASE}/api/user`;
+
 
 const extractError = (error) => error.response?.data?.error || 'Something went wrong';
 
@@ -21,7 +23,7 @@ export const getUser = createAsyncThunk(
     "account/getUser",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${api}/`, { withCredentials: true });
+            const response = await api.get(`${API_ENDPOINTS.USER.BASE}/`, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -33,7 +35,7 @@ export const updateUser = createAsyncThunk(
     "account/updateUser",
     async (data, { rejectWithValue }) => {
         try {
-            const response = await axios.patch(`${api}/`, data, { withCredentials: true });
+            const response = await api.patch(`${API_ENDPOINTS.USER.BASE}/`, data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -45,7 +47,7 @@ export const updatePassword = createAsyncThunk(
     "account/updatePassword",
     async (data, { rejectWithValue }) => {
         try {
-            const response = await axios.patch(`${api}/change-password`, data, { withCredentials: true });
+            const response = await api.patch(`${API_ENDPOINTS.USER.BASE}/change-password`, data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -57,7 +59,7 @@ export const fetchAddresses = createAsyncThunk(
     "account/fetchAddresses",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${api}/addresses`, { withCredentials: true });
+            const response = await api.get(API_ENDPOINTS.USER.ADDRESSES, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -69,7 +71,7 @@ export const addAddress = createAsyncThunk(
     "account/addAddress",
     async (data, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${api}/addresses`, data, { withCredentials: true });
+            const response = await api.post(API_ENDPOINTS.USER.ADDRESSES, data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -81,7 +83,7 @@ export const updateAddress = createAsyncThunk(
     "account/updateAddress",
     async ({ id, data }, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`${api}/addresses/${id}`, data, { withCredentials: true });
+            const response = await api.put(API_ENDPOINTS.USER.ADDRESS(id), data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -93,7 +95,7 @@ export const deleteAddress = createAsyncThunk(
     "account/deleteAddress",
     async (id, { rejectWithValue }) => {
         try {
-            await axios.delete(`${api}/addresses/${id}`, { withCredentials: true });
+            await api.delete(API_ENDPOINTS.USER.ADDRESS(id), { withCredentials: true });
             return { _id: id };
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -106,7 +108,7 @@ export const setDefault = createAsyncThunk(
     "account/setDefault",
     async (id, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`${api}/addresses/${id}/set-default`, {}, { withCredentials: true });
+            const response = await api.put(API_ENDPOINTS.USER.ADDRESS_SET_DEFAULT(id), {}, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -118,7 +120,7 @@ export const getReferralCode = createAsyncThunk(
     "account/getReferralCode",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${api}/referral-code`, { withCredentials: true });
+            const response = await api.get(API_ENDPOINTS.USER.REFERRAL_CODE, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Something went wrong');
@@ -130,7 +132,7 @@ export const applyReferralCode = createAsyncThunk(
     "account/applyReferralCode",
     async (referralCode, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${api}/apply-referral`, { referralCode }, { withCredentials: true });
+            const response = await api.post(API_ENDPOINTS.USER.APPLY_REFERRAL, { referralCode }, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Something went wrong');
@@ -142,7 +144,7 @@ export const getReferredCount = createAsyncThunk(
     "account/getReferredCount",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${api}/referred-count`, { withCredentials: true });
+            const response = await api.get(API_ENDPOINTS.USER.REFERRED_COUNT, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Something went wrong');
