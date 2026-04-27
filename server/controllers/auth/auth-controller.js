@@ -3,8 +3,46 @@ const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 const Order = require("../../models/Order");
 const { SendVerificationCode, SendWelcomeMessage, SendResetPasswordLink } = require("../../middleware/email");
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
 
-//register
+const generateTokens = (user) => {
+    const accessToken = jwt.sign(
+        {
+            id: user._id,
+            role: user.role,
+            email: user.email,
+            username: user.username || user.name,
+        },
+        process.env.JWT_SECRET || "This the thing i love",
+        { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+        { id: user._id },
+        process.env.REFRESH_TOKEN_SECRET || "This the refresh thing i love",
+        { expiresIn: "30d" }
+    );
+
+    return { accessToken, refreshToken };
+};
+
+const setTokenCookies = (res, accessToken, refreshToken) => {
+    res.cookie("token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 mins
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+};
+
 const register = async (req, res) => {
     const { username, email, password } = req.body;
 
@@ -12,14 +50,14 @@ const register = async (req, res) => {
         if (!username || !email || !password)
             return res.json({
                 success: false,
-                message: "Please enter name, email and password",
+                message: MESSAGES.PLEASE_ENTER_NAME_EMAIL_AND_PASSWORD,
             });
 
         const checkUser = await User.findOne({ email });
         if (checkUser)
             return res.json({
                 success: false,
-                message: "User Already exists with the same email! Please try to login",
+                message: MESSAGES.USER_ALREADY_EXISTS_WITH_THE_SAME_EMAIL_PLEASE_TRY_TO_LOGIN,
             });
 
         const hashPassword = await bcrypt.hash(password, 12);
@@ -39,15 +77,15 @@ const register = async (req, res) => {
 
         SendVerificationCode(email, otp);
 
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "Please check your email to verify your account",
+            message: MESSAGES.PLEASE_CHECK_YOUR_EMAIL_TO_VERIFY_YOUR_ACCOUNT,
         });
     } catch (e) {
         console.log(e);
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
-            message: "Some error occured",
+            message: MESSAGES.SOME_ERROR_OCCURED,
         });
     }
 };
@@ -60,20 +98,20 @@ const login = async (req, res) => {
         if (!email || !password)
             return res.json({
                 success: false,
-                message: "Please enter email and password",
+                message: MESSAGES.PLEASE_ENTER_EMAIL_AND_PASSWORD,
             });
 
         const checkUser = await User.findOne({ email });
         if (!checkUser)
             return res.json({
                 success: false,
-                message: "User doesn't exists! Please register first",
+                message: MESSAGES.USER_DOESN_T_EXISTS_PLEASE_REGISTER_FIRST,
             });
 
         if (checkUser.isBlocked)
             return res.json({
                 success: false,
-                message: "Account has been Suspended! Please contact admin",
+                message: MESSAGES.ACCOUNT_HAS_BEEN_SUSPENDED_PLEASE_CONTACT_ADMIN,
             });
 
         if (!checkUser.isVerified) {
@@ -89,7 +127,7 @@ const login = async (req, res) => {
             return res.json({
                 success: false,
                 isVerify: true,
-                message: "Please verify your account first",
+                message: MESSAGES.PLEASE_VERIFY_YOUR_ACCOUNT_FIRST,
             });
         }
 
@@ -100,23 +138,18 @@ const login = async (req, res) => {
         if (!checkPasswordMatch)
             return res.json({
                 success: false,
-                message: "Incorrect password! Please try again",
+                message: MESSAGES.INCORRECT_PASSWORD_PLEASE_TRY_AGAIN,
             });
 
-        const token = jwt.sign(
-            {
-                id: checkUser._id,
-                role: checkUser.role,
-                email: checkUser.email,
-                username: checkUser.username,
-            },
-            "This the thing i love",
-            { expiresIn: "60m" }
-        );
+        const { accessToken, refreshToken } = generateTokens(checkUser);
 
-        res.cookie("token", token, { httpOnly: true, secure: false }).json({
+        checkUser.refreshTokens.push(refreshToken);
+        await checkUser.save();
+
+        setTokenCookies(res, accessToken, refreshToken);
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "Logged in successfully",
+            message: MESSAGES.LOGGED_IN_SUCCESSFULLY,
             user: {
                 email: checkUser.email,
                 role: checkUser.role,
@@ -125,9 +158,9 @@ const login = async (req, res) => {
             },
         });
     } catch (e) {
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
-            message: "Some error occured",
+            message: MESSAGES.SOME_ERROR_OCCURED,
         });
     }
 };
@@ -135,66 +168,87 @@ const login = async (req, res) => {
 
 const authMiddleware = async (req, res, next) => {
     const token = req.cookies.token;
-    if (!token)
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!token && !refreshToken)
         return res.json({
             success: false,
-            message: "Please login first",
+            message: MESSAGES.PLEASE_LOGIN_FIRST,
         });
+
     try {
-        const decoded = jwt.verify(token, "This the thing i love");
-        req.user = decoded;
-        const user = await User.findById(decoded.id);
-        if (user.isBlocked) {
-            return res.redirect('http://localhost:5000/auth/logout');
+        if (token) {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "This the thing i love");
+            req.user = decoded;
+            const user = await User.findById(decoded.id);
+            if (!user || user.isBlocked) {
+                res.clearCookie("token");
+                res.clearCookie("refreshToken");
+                return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.USER_IS_BLOCKED_OR_DELETED });
+            }
+            return next();
         }
-        next();
     } catch (e) {
-        if (e.message === "jwt expired") {
-            return res.json({
-                success: false,
-                message: "Please login first",
-            });
+        if (e.name !== "TokenExpiredError" && e.message !== "jwt expired") {
+            return res.json({ success: false, message: MESSAGES.INVALID_TOKEN });
         }
-        res.status(500).json({
-            success: false,
-            message: "Some error occured",
-        });
+    }
+
+    if (!refreshToken) {
+        return res.json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
+    }
+
+    try {
+        const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || "This the refresh thing i love");
+        const user = await User.findById(decodedRefresh.id);
+        
+        // Ensure user exists, is not blocked, and token exists in DB
+        if (!user || user.isBlocked || !user.refreshTokens.includes(refreshToken)) {
+            res.clearCookie("token");
+            res.clearCookie("refreshToken");
+            return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.INVALID_OR_REVOKED_REFRESH_TOKEN });
+        }
+
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(user);
+        
+        // Refresh Token Rotation
+        user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
+        user.refreshTokens.push(newRefreshToken);
+        await user.save();
+
+        setTokenCookies(res, newAccessToken, newRefreshToken);
+
+        req.user = jwt.decode(newAccessToken);
+        next();
+
+    } catch (e) {
+        return res.json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
     }
 };
 
 const googleAuth = async (req, res) => {
     try {
         if (!req.user) {
-            return res.redirect('http://localhost:5173/auth/login?error=auth_failed');
+            return res.redirect('${process.env.CLIENT_URL}/auth/login?error=auth_failed');
         }
 
         if (req.user.isBlocked) {
-            return res.redirect('http://localhost:5173/auth/login?error=blocked_user');
+            return res.redirect('${process.env.CLIENT_URL}/auth/login?error=blocked_user');
         }
 
-        const token = jwt.sign(
-            {
-                id: req.user._id,
-                role: req.user.role,
-                email: req.user.email,
-                username: req.user.name
-            },
-            "This the thing i love",
-            { expiresIn: '60m' }
-        );
+        const user = await User.findById(req.user._id);
+        const { accessToken, refreshToken } = generateTokens(user);
+        
+        user.refreshTokens.push(refreshToken);
+        await user.save();
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 1000,
-        });
+        setTokenCookies(res, accessToken, refreshToken);
 
-        return res.redirect('http://localhost:5173?login=success');
+        return res.redirect('${process.env.CLIENT_URL}?login=success');
 
     } catch (error) {
         console.error('Google auth error:', error);
-        return res.redirect('http://localhost:5173/auth/login?error=internal_error');
+        return res.redirect('${process.env.CLIENT_URL}/auth/login?error=internal_error');
     }
 };
 
@@ -206,16 +260,16 @@ const verify = async (req, res) => {
     const otpExpiresAt = req.session.otpExpiresAt;
 
     if (!sessionOtp || !sessionEmail) {
-        return res.json({ message: 'Something went wrong' });
+        return res.json({ message: MESSAGES.SOMETHING_WENT_WRONG });
     }
 
 
     if (Date.now() > otpExpiresAt) {
-        return res.json({ message: 'OTP expired try again' });
+        return res.json({ message: MESSAGES.OTP_EXPIRED_TRY_AGAIN });
     }
 
     if (sessionOtp !== otp) {
-        return res.json({ message: 'Invalid OTP' });
+        return res.json({ message: MESSAGES.INVALID_OTP });
     }
 
     const user = await User.findOne({ email: sessionEmail });
@@ -226,36 +280,40 @@ const verify = async (req, res) => {
     req.session.email = null;
     req.session.otpExpiresAt = null;
 
-    const token = jwt.sign(
-        {
-            id: user._id,
-            role: user.role,
-            email: user.email,
-            username: user.username
-        },
-        "This the thing i love",
-        { expiresIn: '60m' }
-    );
+    const { accessToken, refreshToken } = generateTokens(user);
+    user.refreshTokens.push(refreshToken);
+    await user.save();
 
     // Set cookie and redirect in one response
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 1000,
-    });
+    setTokenCookies(res, accessToken, refreshToken);
 
     SendWelcomeMessage(user.email);
 
 
-    res.status(200).json({ success: true, message: 'Logged in successfully', user });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.LOGGED_IN_SUCCESSFULLY, user });
 };
 
 const logout = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    
+    if (refreshToken) {
+        try {
+            const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || "This the refresh thing i love", { ignoreExpiration: true });
+            const user = await User.findById(decoded.id);
+            if (user) {
+                user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+                await user.save();
+            }
+        } catch (e) {
+            console.error("Error during logout:", e);
+        }
+    }
+
     res.clearCookie("token");
+    res.clearCookie("refreshToken");
     res.json({
         success: true,
-        message: "Logged out successfully",
+        message: MESSAGES.LOGGED_OUT_SUCCESSFULLY,
     });
 };
 
@@ -272,11 +330,11 @@ const set = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Set successfully",
+            message: MESSAGES.SET_SUCCESSFULLY,
         });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: "Error setting", error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.ERROR_SETTING, error: error.message });
     }
 
 };
@@ -290,11 +348,11 @@ const resendOtp = async (req, res) => {
         console.log(otp);
 
         SendVerificationCode(req.session.email, otp);
-        if (!req.session.email) return res.json({ success: false, message: 'Something went wrong' });
+        if (!req.session.email) return res.json({ success: false, message: MESSAGES.SOMETHING_WENT_WRONG });
         req.session.otpExpiresAt = Date.now() + 300000; // 5 minutes in milliseconds
-        res.json({ success: true, message: 'OTP sent successfully', });
+        res.json({ success: true, message: MESSAGES.OTP_SENT_SUCCESSFULLY, });
     } catch (error) {
-        res.status(500).json({ message: 'Error sending OTP', error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_SENDING_OTP, error: error.message });
     }
 }
 
@@ -305,7 +363,7 @@ const forgetPassword = async (req, res) => {
         if (!email) {
             return res.json({
                 success: false,
-                message: "Please enter your email address",
+                message: MESSAGES.PLEASE_ENTER_YOUR_EMAIL_ADDRESS,
             });
         }
 
@@ -313,7 +371,7 @@ const forgetPassword = async (req, res) => {
         if (!user) {
             return res.json({
                 success: false,
-                message: "User with this email does not exist",
+                message: MESSAGES.USER_WITH_THIS_EMAIL_DOES_NOT_EXIST,
             });
         }
 
@@ -330,18 +388,18 @@ const forgetPassword = async (req, res) => {
         };
         await user.save();
 
-        const resetLink = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.CLIENT_URL}/auth/reset-password?token=${resetToken}`;
         SendResetPasswordLink(user.email, resetLink);
 
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "Password reset link has been sent to your email",
+            message: MESSAGES.PASSWORD_RESET_LINK_HAS_BEEN_SENT_TO_YOUR_EMAIL,
         });
     } catch (error) {
         console.error("Error sending reset password link:", error);
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
-            message: "Failed to send reset password link",
+            message: MESSAGES.FAILED_TO_SEND_RESET_PASSWORD_LINK,
             error: error.message,
         });
     }
@@ -353,7 +411,7 @@ const resetPassword = async (req, res) => {
     if(password.length < 8){
         return res.json({
             success: false,
-            message: "Password must be 8 characters",
+            message: MESSAGES.PASSWORD_MUST_BE_8_CHARACTERS,
         });
     }
 
@@ -361,7 +419,7 @@ const resetPassword = async (req, res) => {
         if (!token) {
             return res.json({
                 success: false,
-                message: "Token is required",
+                message: MESSAGES.TOKEN_IS_REQUIRED,
             });         
         }
 
@@ -371,7 +429,7 @@ const resetPassword = async (req, res) => {
         if (!user) {
             return res.json({
                 success: false,
-                message: "Invalid token or user does not exist",
+                message: MESSAGES.INVALID_TOKEN_OR_USER_DOES_NOT_EXIST,
             });
         }
 
@@ -379,7 +437,7 @@ const resetPassword = async (req, res) => {
         if (!user.resetPasswordToken || user.resetPasswordToken.token !== token) {
             return res.json({
                 success: false,
-                message: "Invalid or expired reset token",
+                message: MESSAGES.INVALID_OR_EXPIRED_RESET_TOKEN,
             });
         }
 
@@ -391,7 +449,7 @@ const resetPassword = async (req, res) => {
             
             return res.json({
                 success: false,
-                message: "Reset token has expired",
+                message: MESSAGES.RESET_TOKEN_HAS_EXPIRED,
             });
         }
 
@@ -401,24 +459,65 @@ const resetPassword = async (req, res) => {
         user.resetPasswordToken = undefined;
         await user.save();
 
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "Password reset successfully",
+            message: MESSAGES.PASSWORD_RESET_SUCCESSFULLY,
         });
 
     } catch (error) {
         if (error.name === "TokenExpiredError") {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: "Token has expired",
+                message: MESSAGES.TOKEN_HAS_EXPIRED,
             });
         }
         console.error("Error resetting password:", error);
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
-            message: "Failed to reset password",
+            message: MESSAGES.FAILED_TO_RESET_PASSWORD,
             error: error.message,
         });
+    }
+};
+
+const refreshToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || "This the refresh thing i love");
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.isBlocked || !user.refreshTokens.includes(refreshToken)) {
+            res.clearCookie("token");
+            res.clearCookie("refreshToken");
+            return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.INVALID_OR_REVOKED_REFRESH_TOKEN });
+        }
+
+        const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+
+        user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
+        user.refreshTokens.push(newRefreshToken);
+        await user.save();
+
+        setTokenCookies(res, accessToken, newRefreshToken);
+        res.status(HTTP_STATUS.OK).json({
+            success: true,
+            message: MESSAGES.TOKEN_REFRESHED_SUCCESSFULLY,
+            user: {
+                id: user._id,
+                role: user.role,
+                email: user.email,
+                username: user.username || user.name,
+            }
+        });
+    } catch (error) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
     }
 };
 
@@ -432,5 +531,6 @@ module.exports = {
     resendOtp,
     set,
     forgetPassword,
-    resetPassword
+    resetPassword,
+    refreshToken
 };
