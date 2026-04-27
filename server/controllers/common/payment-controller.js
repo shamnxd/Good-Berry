@@ -4,6 +4,9 @@ const Order = require('../../models/Order');
 const Wallet = require('../../models/Wallet');
 const Variant = require('../../models/Variant');
 const Cart = require('../../models/Cart');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -15,7 +18,7 @@ const paymentController = {
     try {
       const order = await Order.findById(req.body.orderId);
       if (!order) {                                   
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       const options = {
@@ -33,7 +36,7 @@ const paymentController = {
       });
     } catch (error) {
       console.error('Error creating Razorpay order:', error);
-      res.status(500).json({ message: 'Error creating payment order', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_CREATING_PAYMENT_ORDER, error: error.message });
     }
   },
 
@@ -52,13 +55,13 @@ const paymentController = {
       const digest = shasum.digest('hex');
 
       if (digest !== razorpaySignature) {
-        return res.status(400).json({ message: 'Transaction not legitimate!' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.TRANSACTION_NOT_LEGITIMATE });
       }
 
       const order = await Order.findById(orderData._id);
       if (!order) {
         console.log('Order not found:', orderData._id);
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       order.razorpay = {
@@ -84,12 +87,12 @@ const paymentController = {
       await order.save();
 
       res.json({
-        message: 'Payment verified successfully',
+        message: MESSAGES.PAYMENT_VERIFIED_SUCCESSFULLY,
         orderId: order.orderId
       });
     } catch (error) {
       console.error('Error verifying payment:', error);
-      res.status(500).json({ message: 'Error verifying payment', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_VERIFYING_PAYMENT, error: error.message });
     }
   },
 
@@ -100,7 +103,7 @@ const paymentController = {
 
       const order = await Order.findById(orderId);
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       order.paymentStatus = 'failed';
@@ -112,10 +115,10 @@ const paymentController = {
       
       await order.save();
 
-      res.json({ message: 'Payment status updated to failed' });
+      res.json({ message: MESSAGES.PAYMENT_STATUS_UPDATED_TO_FAILED });
     } catch (error) {
       console.error('Error handling payment failure:', error);
-      res.status(500).json({ message: 'Error handling payment failure', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_HANDLING_PAYMENT_FAILURE, error: error.message });
     }
   },
 

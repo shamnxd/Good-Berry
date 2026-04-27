@@ -14,24 +14,16 @@ const Category = ({ icon, label, isActive, onClick }) => (
   </div>
 )
 
-export function ProductCategorySelector({ activeCategory, onCategoryChange }) {
-  const categories = [
-    { icon: iceCream, label: 'ICE CREAM', value: 'ice-cream' },
-    { icon: tea, label: 'FRUIT TEA', value: 'fruit-tea' },
-    { icon: jam, label: 'FRUIT JAM', value: 'fruit-jam' },
-    { icon: juice, label: 'JUICE', value: 'juice' },
-    { icon: snacks, label: 'SNACKS', value: 'snacks' },
-  ]
-
+export function ProductCategorySelector({ activeCategory, categories, onCategoryChange }) {
   return (
-    <div className="our-categorys flex justify-center gap-12 mb-16">
-      {categories.map((category) => (
+    <div className="our-categorys flex justify-center gap:10 sm:gap-12 mb-8 sm:mb-3 overflow-x-auto no-scrollbar pb-4">
+      {categories?.map((category) => (
         <Category
-          key={category.value}
-          icon={category.icon}
-          label={category.label}
-          isActive={activeCategory === category.value}
-          onClick={() => onCategoryChange(category.value)}
+          key={category._id}
+          icon={category.image}
+          label={category.name.toUpperCase()}
+          isActive={activeCategory === category._id}
+          onClick={() => onCategoryChange(category._id)}
         />
       ))}
     </div>

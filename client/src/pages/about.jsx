@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {BadgeDollarSign, CheckCircle, HeartHandshake, Leaf, TreePine, Truck, Users } from "lucide-react";
+import MESSAGES from '../constants/messages';
+
 
 export default function AboutPage() {
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12 space-y-16 mt-10">
+    <div className="container mx-auto max-w-[1400px] px-4 py-12 space-y-16 mt-10">
       {/* Hero Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div className="space-y-4">
@@ -21,28 +23,16 @@ export default function AboutPage() {
           </p>
         </div>
       </div>
-
-      {/* Our Mission */}
-      <div className="p-8 bg-green-50 rounded-xl border border-green-100">
-        <div className="flex items-center gap-4 mb-6">
-          <HeartHandshake size={32} className="text-[#90c846]" />
-          <h2 className="text-3xl font-bold">Our Mission</h2>
-        </div>
-        <p className="text-gray-600 text-lg">
-          To create wholesome, natural products that promote healthy living while
-          supporting sustainable agriculture and ethical sourcing practices.
-        </p>
-      </div>
-
+      
       {/* Why Choose Us */}
       <section className="space-y-8">
         <h2 className="text-3xl font-bold text-center">Why Choose Goodberry</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { icon: CheckCircle, title: '100% Natural', text: 'No artificial additives or preservatives' },
-            { icon: TreePine, title: 'Eco-Friendly', text: 'Sustainable packaging and practices' },
-            { icon: Truck, title: 'Fast Delivery', text: 'Fresh products to your doorstep' },
-            { icon: BadgeDollarSign, title: 'Fair Pricing', text: 'Quality you can afford' },
+            { icon: CheckCircle, title: MESSAGES.NATURAL_100, text: 'No artificial additives or preservatives' },
+            { icon: TreePine, title: MESSAGES.ECO_FRIENDLY, text: 'Sustainable packaging and practices' },
+            { icon: Truck, title: MESSAGES.FAST_DELIVERY, text: 'Fresh products to your doorstep' },
+            { icon: BadgeDollarSign, title: MESSAGES.FAIR_PRICING, text: 'Quality you can afford' },
           ].map((item, index) => (
             <div key={index} className="flex gap-4">
               <item.icon size={32} className="text-[#90c846] flex-shrink-0" />

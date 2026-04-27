@@ -1,4 +1,6 @@
+import MESSAGES from '../../../constants/messages';
 import {
+
   AlertTriangle,
   Check,
   Copy,
@@ -109,12 +111,26 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (flavorKeys.length > 0 && !selectedFlavor) {
-      setSelectedFlavor(flavorKeys[0]);
-      setSelectedImage(flavors[flavorKeys[0]].images[0]);
-      setPackageSize(flavors[flavorKeys[0]].packageSizes[0]);
+      // Find first flavor that has any size in stock
+      let initialFlavorKey = flavorKeys[0];
+      let initialSize = flavors[flavorKeys[0]].packageSizes[0];
+      
+      const firstAvailable = flavorKeys.find(key => 
+        flavors[key].packSizePricing.some(p => p.quantity > 0)
+      );
 
-      const initialPricing = flavors[flavorKeys[0]].packSizePricing.find(
-        (p) => p.size === flavors[flavorKeys[0]].packageSizes[0]
+      if (firstAvailable) {
+        initialFlavorKey = firstAvailable;
+        const availablePack = flavors[firstAvailable].packSizePricing.find(p => p.quantity > 0);
+        initialSize = availablePack.size;
+      }
+
+      setSelectedFlavor(initialFlavorKey);
+      setSelectedImage(flavors[initialFlavorKey].images[0]);
+      setPackageSize(initialSize);
+
+      const initialPricing = flavors[initialFlavorKey].packSizePricing.find(
+        (p) => p.size === initialSize
       );
       setCurrentPrice({
         price: initialPricing?.price || 0,
@@ -125,34 +141,33 @@ export default function ProductPage() {
 
   useEffect(() => {
     const checkAvailableQuantity = async () => {
-      if (flavor) {
+      if (product?._id && flavor?.title && packageSize) {
         try {
-          const result = await dispatch(
+          const response = await dispatch(
             checkQuantity({
               productId: product._id,
               packageSize,
               flavor: flavor.title,
             })
           ).unwrap();
-          setAvailableQuantity(result.quantity);
+          setAvailableQuantity(response.data.quantity);
         } catch (error) {
           console.error("Error checking quantity:", error);
-          toast({
-            title: "Error",
-            description: "Failed to check available quantity",
-            variant: "destructive",
-          });
         }
       }
     };
 
     checkAvailableQuantity();
-  }, [flavor, packageSize, dispatch]);
+  }, [product?._id, packageSize, flavor?.title, dispatch]);
 
   const handleFlavorChange = (value) => {
     setSelectedFlavor(value);
     setSelectedImage(flavors[value]?.images[0]);
-    const newPackageSize = flavors[value]?.packageSizes[0];
+    
+    // Find first available size for this new flavor, or fallback to first size
+    const availablePack = flavors[value]?.packSizePricing.find(p => p.quantity > 0);
+    const newPackageSize = availablePack ? availablePack.size : flavors[value]?.packageSizes[0];
+    
     setPackageSize(newPackageSize);
 
     const newPricing = flavors[value]?.packSizePricing.find(
@@ -186,7 +201,7 @@ export default function ProductPage() {
 
     if (totalQuantity > 5) {
       toast({
-        title: "Quantity Limit Reached",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
         description: `You already have ${currentCartQuantity} items in cart. Maximum limit is 5 items.`,
       });
       return;
@@ -194,7 +209,7 @@ export default function ProductPage() {
 
     if (totalQuantity > availableQuantity) {
       toast({
-        title: "Quantity Limit Reached",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
         description: `Only ${availableQuantity} items are available in stock.`,
       });
       return;
@@ -216,7 +231,7 @@ export default function ProductPage() {
     try {
       await dispatch(addToCart(newCartItem)).unwrap();
 
-      const result = await dispatch(
+      const response = await dispatch(
         checkQuantity({
           productId: product._id,
           packageSize,
@@ -224,14 +239,14 @@ export default function ProductPage() {
         })
       ).unwrap();
 
-      setAvailableQuantity(result.quantity);
+      setAvailableQuantity(response.data.quantity);
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
 
       toast({
-        title: "Success",
-        description: "Product added to cart successfully!",
+        title: MESSAGES.SUCCESS,
+        description: MESSAGES.PRODUCT_ADDED_TO_CART_SUCCESSFULLY,
       });
 
       setTimeout(() => setAddedToCart(false), 2000);
@@ -239,8 +254,8 @@ export default function ProductPage() {
       setIsAddingToCart(false);
       toast({
         variant: "destructive",
-        title: "Error" + err,
-        description: "Failed to add product to cart. Please try again.",
+        title: MESSAGES.ERROR + err,
+        description: MESSAGES.FAILED_TO_ADD_PRODUCT_TO_CART_PLEASE_TRY_AGAIN,
       });
     }
   };
@@ -264,15 +279,15 @@ export default function ProductPage() {
 
     if (totalQuantity > 5) {
       toast({
-        title: "Quantity Limit Reached",
-        description: "You can only add a maximum of 5 items to the cart.",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
+        description: MESSAGES.YOU_CAN_ONLY_ADD_A_MAXIMUM_OF_5_ITEMS_TO_THE_CART,
       });
       return;
     }
 
     if (newQuantity > availableQuantity) {
       toast({
-        title: "Quantity Limit Reached",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
         description: `Only ${availableQuantity} items are available in stock.`,
       });
       return;
@@ -290,8 +305,8 @@ export default function ProductPage() {
   const handleWishlistToggle = async () => {
     if (!user) {
       toast({
-        title: "Please login to add to wishlist",
-        description: "You must be logged in to add items to your wishlist.",
+        title: MESSAGES.PLEASE_LOGIN_TO_ADD_TO_WISHLIST,
+        description: MESSAGES.YOU_MUST_BE_LOGGED_IN_TO_ADD_ITEMS_TO_YOUR_WISHLIST,
       });
       return navigate("/auth/login");
     }
@@ -301,16 +316,16 @@ export default function ProductPage() {
           removeFromWishlist({ productId: product._id, variantId: flavor._id })
         );
         toast({
-          title: "Success",
-          description: "Product removed from wishlist",
+          title: MESSAGES.SUCCESS,
+          description: MESSAGES.PRODUCT_REMOVED_FROM_WISHLIST,
         });
       } else {
         await dispatch(
           addToWishlist({ productId: product._id, variantId: flavor._id })
         );
         toast({
-          title: "Success",
-          description: "Product added to wishlist",
+          title: MESSAGES.SUCCESS,
+          description: MESSAGES.PRODUCT_ADDED_TO_WISHLIST,
         });
       }
       await dispatch(getWishlist());
@@ -318,7 +333,7 @@ export default function ProductPage() {
       toast({
         variant: "destructive",
         title: error,
-        description: "Failed to update wishlist. Please try again.",
+        description: MESSAGES.FAILED_TO_UPDATE_WISHLIST_PLEASE_TRY_AGAIN,
       });
     }
   };
@@ -327,21 +342,23 @@ export default function ProductPage() {
     try {
       await navigator.clipboard.writeText(window.location.href);
       toast({
-        description: "Link copied to clipboard!",
+        description: MESSAGES.LINK_COPIED_TO_CLIPBOARD,
       });
       setShareDialogOpen(false);
     } catch (err) {
       toast({
         variant: "destructive",
         title: err,
-        description: "Failed to copy link. Please try again.",
+        description: MESSAGES.FAILED_TO_COPY_LINK_PLEASE_TRY_AGAIN,
       });
     }
   };
 
-  if (!currentPrice.price || !currentPrice.salePrice) {
-    dispatch(getSingleProduct(id));
-  }
+  useEffect(() => {
+    if (id && (!currentPrice.price || !currentPrice.salePrice)) {
+      dispatch(getSingleProduct(id));
+    }
+  }, [id, dispatch, currentPrice.price, currentPrice.salePrice]);
 
   if (error) {
     return (
@@ -360,20 +377,22 @@ export default function ProductPage() {
     );
   }
 
-  if (!flavor) {
+  if (!product || Object.keys(product).length === 0) {
     return (
-      <div className="flex flex-row space-x-3 justify-center items-center p-10 mt-10">
-        <div className="flex flex-row gap-4">
-          <Skeleton className="h-[450px] w-[450px] rounded-xl" />
-          <div className="flex flex-col gap-4">
+      <div className="container mx-auto px-4 py-10 mt-10">
+        <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
+          <Skeleton className="h-[300px] w-full lg:h-[450px] lg:w-[450px] rounded-xl" />
+          <div className="flex flex-col gap-4 w-full lg:w-[450px]">
             <div className="flex flex-row gap-4">
-              <Skeleton className="h-[90px] w-[100px]" />
-              <Skeleton className="h-[90px] w-[100px]" />
-              <Skeleton className="h-[90px] w-[100px]" />
+              <Skeleton className="h-[70px] w-[70px] lg:h-[90px] lg:w-[100px]" />
+              <Skeleton className="h-[70px] w-[70px] lg:h-[90px] lg:w-[100px]" />
+              <Skeleton className="h-[70px] w-[70px] lg:h-[90px] lg:w-[100px]" />
             </div>
+            <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
-            <Skeleton className="mt-3 h-[150px] w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="mt-3 h-[100px] lg:h-[150px] w-full" />
           </div>
         </div>
       </div>
@@ -521,22 +540,33 @@ export default function ProductPage() {
 
             <div>
               <div className="mb-2 text-sm font-medium">Package size:</div>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-3">
                 {flavor &&
-                  flavor.packageSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handlePackageSizeChange(size)}
-                      className={cn(
-                        "rounded-md border px-4 py-2 text-sm transition-colors",
-                        packageSize === size
-                          ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
-                          : "hover:bg-muted"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  flavor.packageSizes.map((size) => {
+                    const pricing = flavor.packSizePricing.find((p) => p.size === size);
+                    const isOutOfStock = !pricing || pricing.quantity <= 0;
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => handlePackageSizeChange(size)}
+                        className={cn(
+                          "relative rounded-md border px-4 py-2 text-sm transition-all overflow-hidden",
+                          packageSize === size
+                            ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
+                            : "hover:bg-muted font-medium",
+                          isOutOfStock && "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                        )}
+                      >
+                        {size}
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                             <div className="w-[150%] h-[2px] bg-red-500 -rotate-[25deg] absolute" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 
@@ -603,7 +633,7 @@ export default function ProductPage() {
                 to="/category/ice-cream"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                {product.category.name}
+                {product?.category?.name}
               </Link>
             </div>
           </div>
@@ -611,25 +641,29 @@ export default function ProductPage() {
       </div>
 
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] w-[92vw] rounded-xl p-6">
           <DialogHeader>
-            <DialogTitle>Share product</DialogTitle>
+            <DialogTitle className="text-xl">Share product</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center space-x-2">
-            <div className="grid flex-1 gap-2">
-              <p className="text-sm text-muted-foreground">
-                Copy the link below to share this product
-              </p>
-              <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                <span className="text-sm text-muted-foreground line-clamp-1">
+          <div className="space-y-4 pt-4">
+            <p className="text-sm text-muted-foreground">
+              Copy the link below to share this product with others.
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
+                <span className="text-sm text-muted-foreground truncate flex-1">
                   {window.location.href}
                 </span>
               </div>
+              <Button 
+                type="button" 
+                className="w-full bg-[#8CC63F] hover:bg-[#7AB32F] text-white font-medium py-6"
+                onClick={handleCopyLink}
+              >
+                Copy Link <Copy className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <Button type="button" className="w-[90px]" onClick={handleCopyLink}>
-            Copy <Copy className="h-4 w-4" />
-          </Button>
         </DialogContent>
       </Dialog>
 

@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Table,
   TableBody,
   TableCell,
@@ -94,13 +96,13 @@ export default function ProductsPage() {
 
       if (data.payload.success) {
         toast({
-          title: "Success",
+          title: MESSAGES.SUCCESS,
           description: data.payload.message,
         });
         loadProducts(currentPage);
       } else {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: data.payload.message || "Failed to update product status",
           variant: "destructive",
         });
@@ -118,13 +120,13 @@ export default function ProductsPage() {
 
       if (data.payload.success) {
         toast({
-          title: "Success",
+          title: MESSAGES.SUCCESS,
           description: data.payload.message,
         });
         loadProducts(currentPage);
       } else {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: data.payload.message || "Failed to add offer",
           variant: "destructive",
         });
@@ -142,13 +144,13 @@ export default function ProductsPage() {
 
       if (data.payload.success) {
         toast({
-          title: "Success",
+          title: MESSAGES.SUCCESS,
           description: data.payload.message,
         });
         loadProducts(currentPage);
       } else {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: data.payload.message || "Failed to remove offer",
           variant: "destructive",
         });

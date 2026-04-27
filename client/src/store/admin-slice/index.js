@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
 const initialState = {
   users: [],
@@ -18,15 +19,14 @@ const initialState = {
   status: 'idle',
 };
 
-const BASE_URL = import.meta.env.VITE_API_BASE;
-const api = `${BASE_URL}/api/admin`;
+
 
 // Thunk to Fetch Users
 export const fetchUsers = createAsyncThunk(
   "admin/fetchUsers",
   async ({ page = 1, limit = 6, search = '' } = {}, thunkAPI) => {
     try {
-      const response = await axios.get(`${api}/users`, {
+      const response = await api.get(`${API_ENDPOINTS.ADMIN.USERS}`, {
         params: { page, limit, search },
         withCredentials: true,
       });
@@ -42,8 +42,8 @@ export const updateUserStatus = createAsyncThunk(
   "admin/updateStatus",
   async ({ id, isBlocked }, thunkAPI) => {
     try {
-      await axios.patch(
-        `${api}/users/${id}/block`,
+      await api.patch(
+        `${API_ENDPOINTS.ADMIN.USERS_BLOCK(id)}`,
         { isBlocked },
         { withCredentials: true }
       );
@@ -58,7 +58,7 @@ export const getAllCategories = createAsyncThunk(
   "admin/getAllCategories",
   async ({ page = 1, limit = 5 } = {}, thunkAPI) => {
     try {
-      const response = await axios.get(`${api}/categories`,
+      const response = await api.get(`${API_ENDPOINTS.ADMIN.CATEGORIES}`,
       {
         params: { page, limit },
         withCredentials: true,
@@ -75,8 +75,8 @@ export const updateCategory = createAsyncThunk(
   "admin/updateCategory",
   async ({ id, name, status, image }, thunkAPI) => {
     try {
-      const response = await axios.put(
-        `${api}/categories/${id}`,
+      const response = await api.put(
+        `${API_ENDPOINTS.ADMIN.CATEGORY(id)}`,
         { name, status, image },
         { withCredentials: true }
       );
@@ -92,8 +92,8 @@ export const addCategory = createAsyncThunk(
   "admin/addCategory",
 
   async (newCategory) => {
-    const response = await axios.post(
-      `${api}/categories`,
+    const response = await api.post(
+      `${API_ENDPOINTS.ADMIN.CATEGORIES}`,
       newCategory,
       {
         withCredentials: true,
@@ -106,8 +106,8 @@ export const addCategory = createAsyncThunk(
 export const addProduct = createAsyncThunk(
   "admin/addProduct",
   async (formData) => {
-    const response = await axios.post(
-      `${api}/products`,
+    const response = await api.post(
+      `${API_ENDPOINTS.ADMIN.PRODUCTS}`,
       formData,
       {
         withCredentials: true,
@@ -120,7 +120,7 @@ export const addProduct = createAsyncThunk(
 export const editProduct = createAsyncThunk(
   'admin/editProduct',
   async (formData) => {
-      const response = await axios.put(`${api}/products/${formData.id}`, 
+      const response = await api.put(`${API_ENDPOINTS.ADMIN.PRODUCT(formData.id)}`, 
         formData,
         {
           withCredentials: true,
@@ -134,7 +134,7 @@ export const editProduct = createAsyncThunk(
 export const getProductDetails = createAsyncThunk(
   "admin/getProductDetails",
   async (id) => {
-    const response = await axios.get(`${api}/products/${id}`, {
+    const response = await api.get(`${API_ENDPOINTS.ADMIN.PRODUCT(id)}`, {
       withCredentials: true,
     });
     return response.data;
@@ -148,7 +148,7 @@ export const uploadToCloudinary = createAsyncThunk(
     formData.append("image", file);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/upload`, {
+      const response = await fetch(`${API_ENDPOINTS.COMMON.UPLOAD}`, {
         method: "POST",
         body: formData,
       });
@@ -169,8 +169,8 @@ export const uploadToCloudinary = createAsyncThunk(
 export const unlistProduct = createAsyncThunk(
   "admin/unlistProduct",
   async (id) => {
-    const response = await axios.patch(
-      `${api}/products/${id}`,{},
+    const response = await api.patch(
+      `${API_ENDPOINTS.ADMIN.PRODUCT(id)}`,{},
       {
         withCredentials: true,
       }
@@ -184,7 +184,7 @@ export const fetchProducts = createAsyncThunk(
   "admin/fetchProducts",
   async ({ page = 1, limit = 5, search = '' } = {}, thunkAPI) => {
     try {
-      const response = await axios.get(`${api}/products`, {
+      const response = await api.get(`${API_ENDPOINTS.ADMIN.PRODUCTS}`, {
         params: { page, limit, search },
         withCredentials: true,
       });
@@ -198,7 +198,7 @@ export const fetchProducts = createAsyncThunk(
 export const fetchDashboardData = createAsyncThunk(
   'dashboard/fetchDashboardData',
   async (timeRange = 'weekly') => {
-    const response = await axios.get(`${api}/dashboard?timeRange=${timeRange}`, {
+    const response = await api.get(`${API_ENDPOINTS.ADMIN.DASHBOARD}?timeRange=${timeRange}`, {
       withCredentials: true
     });
     return response.data;

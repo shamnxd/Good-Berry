@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Sheet,
   SheetContent,
   SheetDescription,
@@ -8,14 +10,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Plus, Minus, Loader2 } from "lucide-react";
+import { Trash2, Plus, Minus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
 import {
   removeFromCart,
   updateCartItemQuantity,
+  checkQuantity,
 } from "@/store/shop-slice/cart-slice";
-import { checkQuantity } from "@/store/shop-slice/cart-slice";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -36,43 +38,55 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     }
   }, [isCartOpen]);
 
+  const getItemId = (productId) => {
+    return typeof productId === 'object' ? productId._id : productId;
+  };
+
   useEffect(() => {
     const fetchAllQuantities = async () => {
-      const quantities = {};
-      for (const item of items) {
-        try {
-          const result = await dispatch(
-            checkQuantity({
-              productId: item.productId,
+      try {
+        const response = await dispatch(
+          checkQuantity(
+            items.map((item) => ({
+              productId: getItemId(item.productId),
               packageSize: item.packageSize,
               flavor: item.flavor,
-            })
-          ).unwrap();
-          quantities[`${item.productId}-${item.packageSize}-${item.flavor}`] =
-            result.quantity;
-        } catch (error) {
-          console.error("Error fetching quantity:", error);
-        }
+            }))
+          )
+        ).unwrap();
+
+        const quantities = {};
+        const data = response.data;
+        data.forEach((res) => {
+          if (!res.error) {
+            const resId = getItemId(res.productId);
+            quantities[`${resId}-${res.packageSize}-${res.flavor}`] =
+              res.quantity;
+          }
+        });
+        setAvailableQuantities(quantities);
+      } catch (error) {
+        console.error("Error fetching quantities:", error);
       }
-      setAvailableQuantities(quantities);
     };
 
-    if (isCartOpen && items.length > 0) {
+    if (isCartOpen && items && items.length > 0) {
       fetchAllQuantities();
     }
   }, [isCartOpen, items, dispatch]);
 
   const getAvailableQuantity = (item) => {
+    const itemId = getItemId(item.productId);
     return (
       availableQuantities[
-        `${item.productId}-${item.packageSize}-${item.flavor}`
+        `${itemId}-${item.packageSize}-${item.flavor}`
       ] || 0
     );
   };
 
-  const handleQuantityChange = async (item, action) => {
+  const handleQuantityChange = async (item, action, forcedValue = null) => {
     const currentQuantity = item.quantity;
-    const newQuantity =
+    const newQuantity = forcedValue !== null ? forcedValue :
       action === "increase" ? currentQuantity + 1 : currentQuantity - 1;
     const availableQuantity = getAvailableQuantity(item);
 
@@ -80,15 +94,15 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
 
     if (newQuantity > 5) {
       toast({
-        title: "Quantity Limit Reached",
-        description: "You can only add a maximum of 5 items to the cart.",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
+        description: MESSAGES.YOU_CAN_ONLY_ADD_A_MAXIMUM_OF_5_ITEMS_TO_THE_CART,
       });
       return;
     }
 
     if (newQuantity > availableQuantity) {
       toast({
-        title: "Quantity Limit Reached",
+        title: MESSAGES.QUANTITY_LIMIT_REACHED,
         description: `Only ${availableQuantity} items are available in stock.`,
       });
       return;
@@ -103,24 +117,10 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
           quantity: newQuantity,
         })
       ).unwrap();
-
-      const result = await dispatch(
-        checkQuantity({
-          productId: item.productId,
-          packageSize: item.packageSize,
-          flavor: item.flavor,
-        })
-      ).unwrap();
-
-      setAvailableQuantities((prev) => ({
-        ...prev,
-        [`${item.productId}-${item.packageSize}-${item.flavor}`]:
-          result.quantity,
-      }));
-    } catch (error) {
+    } catch (err) {
       toast({
-        title: "Error " + error,
-        description: "Failed to update quantity. Please try again.",
+        title: MESSAGES.UPDATE_FAILED,
+        description: typeof err === 'string' ? err : "Failed to update quantity. Please try again.",
         variant: "destructive",
       });
     }
@@ -139,35 +139,27 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
     }
   };
 
+  const inStockItems = items.filter(
+    (item) => getAvailableQuantity(item) > 0 && item.quantity <= getAvailableQuantity(item)
+  );
+  const outOfStockItems = items.filter(
+    (item) => getAvailableQuantity(item) === 0 || item.quantity > getAvailableQuantity(item)
+  );
+
   const calculateTotals = () => {
-    const subtotal = items.reduce(
+    const subtotal = inStockItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
     const discount =
       subtotal -
-      items.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
+      inStockItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0);
     return {
       subtotal,
       discount: discount,
       total: subtotal - discount,
     };
   };
-
-  // if (quantityLoading) {
-  //   return (
-  //     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-  //       <SheetContent
-  //         side="right"
-  //         className={`w-full sm:max-w-sm transition-all ${animationClass}`}
-  //       >
-  //         <div className="flex items-center justify-center h-full">
-  //           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8CC63F]"></div>
-  //         </div>
-  //       </SheetContent>
-  //     </Sheet>
-  //   );
-  // }
 
   const { subtotal, discount, total } = calculateTotals();
 
@@ -184,90 +176,132 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
 
         <ScrollArea className="flex-grow mt-8">
           {items.length > 0 ? (
-            <div className="flex flex-col space-y-4">
-              {items.map((item) => (
-                <div
-                  key={`${item.productId}-${item.packageSize}-${item.flavor}`}
-                  className="flex flex-col space-y-4"
-                >
-                  <div className="flex items-start space-x-4">
-                    <div className="h-20 w-20 rounded-md border bg-white p-2">
-                      <img
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        className="h-full w-full object-contain"
-                        onError={(e) => {
-                          e.target.src = "/fallback-image.png";
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() =>
-                            handleRemoveItem(
-                              item.productId,
-                              item.packageSize,
-                              item.flavor
-                            )
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {item.flavor}{" "}
-                        {item.packageSize && `- ${item.packageSize}`}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-sm font-medium text-[#8CC63F]">
-                          ₹{item.price.toFixed(2)}
-                        </p>
-                        <div className="flex items-center border rounded-md">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              handleQuantityChange(item, "decrease")
-                            }
-                            disabled={item.quantity <= 1 || quantityLoading}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 flex items-center justify-center">
-                            {quantityLoading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              item.quantity
-                            )}
-                          </span>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              handleQuantityChange(item, "increase")
-                            }
-                            disabled={
-                              item.quantity >= getAvailableQuantity(item) ||
-                              item.quantity >= 5 ||
-                              quantityLoading
-                            }
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
+            <div className="flex flex-col space-y-6">
+              {/* Available Items */}
+              {inStockItems.length > 0 && (
+                <div className="space-y-4">
+                  {inStockItems.map((item) => (
+                    <div
+                      key={`${item.productId}-${item.packageSize}-${item.flavor}`}
+                      className="flex flex-col space-y-4"
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="h-16 w-16 rounded-md border bg-white p-1">
+                          <img
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium text-sm">{item.name}</h3>
+                            <button
+                              onClick={() =>
+                                handleRemoveItem(
+                                  item.productId,
+                                  item.packageSize,
+                                  item.flavor
+                                )
+                              }
+                              className="text-muted-foreground hover:text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4 !text-gray-800" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {item.flavor}{" "}
+                            {item.packageSize && `- ${item.packageSize}`}
+                          </p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-sm font-medium text-[#8CC63F]">
+                              ₹{item.price.toFixed(2)}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center rounded-lg border bg-gray-50/50 scale-90 origin-right">
+                                    <button
+                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-30"
+                                        onClick={() => handleQuantityChange(item, "decrease")}
+                                        disabled={item.quantity <= 1}
+                                    >
+                                        <Minus className="h-3 w-3" />
+                                    </button>
+                                    <span className="w-6 text-center font-bold text-xs">{item.quantity}</span>
+                                    <button
+                                        className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-30"
+                                        onClick={() => handleQuantityChange(item, "increase")}
+                                        disabled={
+                                            item.quantity >= getAvailableQuantity(item) ||
+                                            item.quantity >= 5
+                                        }
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Unavailable Items */}
+              {outOfStockItems.length > 0 && (
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="text-[13px] font-bold text-red-500">
+                    Currently Unavailable
+                  </h4>
+                  {outOfStockItems.map((item) => (
+                    <div
+                      key={`${item.productId}-${item.packageSize}-${item.flavor}`}
+                      className="flex flex-col space-y-4"
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="h-14 w-14 rounded-md border bg-gray-50 p-1 grayscale">
+                          <img
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium text-xs line-clamp-1">{item.name}</h3>
+                            <button
+                              onClick={() =>
+                                handleRemoveItem(
+                                  item.productId,
+                                  item.packageSize,
+                                  item.flavor
+                                )
+                              }
+                            >
+                              <Trash2 className="h-4 w-4 " />
+                            </button>
+                          </div>
+                          <div className="flex justify-between items-center mt-1">
+                            <p className="text-[11px] text-yellow-600 font-bold">
+                              {getAvailableQuantity(item) === 0 
+                                ? "Out of Stock" 
+                                : `Only ${getAvailableQuantity(item)} available`}
+                            </p>
+                            {getAvailableQuantity(item) > 0 && (
+                              <button
+                                onClick={() => handleQuantityChange(item, "set", getAvailableQuantity(item))}
+                                className="text-[12px] text-[#8CC63F] hover:underline font-bold"
+                              >
+                                Update to {getAvailableQuantity(item)}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">
@@ -296,13 +330,14 @@ const CartSidebar = ({ isCartOpen, setIsCartOpen }) => {
             )}
             {items.length > 0 && (
               <Button
-                className="w-full bg-[#8CC63F] hover:bg-[#7AB32F]"
+                className={`w-full ${inStockItems.length === 0 ? "bg-gray-400" : "bg-[#8CC63F] hover:bg-[#7AB32F]"}`}
                 onClick={() => {
                   setIsCartOpen(false);
                   navigate("/shop/cart");
                 }}
+                disabled={inStockItems.length === 0}
               >
-                Complete Your Purchase
+                Complete Your Purchase ({inStockItems.length})
               </Button>
             )}
             <Button

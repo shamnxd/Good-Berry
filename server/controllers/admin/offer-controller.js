@@ -2,6 +2,9 @@ const Category = require('../../models/Categorys.js');
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
 const Cart = require('../../models/Cart');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 // Add Offer to Category
 const addCategoryOffer = async (req, res) => {
@@ -10,7 +13,7 @@ const addCategoryOffer = async (req, res) => {
     const category = await Category.findById(categoryId);
 
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
     category.offerPercentage = offerPercentage;
@@ -69,10 +72,10 @@ const addCategoryOffer = async (req, res) => {
       }
     }
 
-    res.status(200).json({ success: true, message: 'Offer added successfully' });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OFFER_ADDED_SUCCESSFULLY });
   } catch (error) {
     console.error('Error adding offer:', error.message);
-    res.status(500).json({ success: false, message: 'Failed to add offer', error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_ADD_OFFER, error: error.message });
   }
 };
 
@@ -84,7 +87,7 @@ const removeCategoryOffer = async (req, res) => {
     const category = await Category.findById(categoryId);
 
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.CATEGORY_NOT_FOUND });
     }
 
     category.offerPercentage = 0;
@@ -140,10 +143,10 @@ const removeCategoryOffer = async (req, res) => {
         await cart.save();
       }
     }
-    res.status(200).json({ success: true, message: 'Offer removed successfully' });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OFFER_REMOVED_SUCCESSFULLY });
   } catch (error) {
     console.error('Error removing offer:', error.message);
-    res.status(500).json({ success: false, message: 'Failed to remove offer', error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_REMOVE_OFFER, error: error.message });
   }
 };
 
@@ -159,7 +162,7 @@ const addProductOffer = async (req, res) => {
     );
 
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
     // Update sale prices for all variants of this product
@@ -196,10 +199,10 @@ const addProductOffer = async (req, res) => {
       await cart.save();
     }
 
-    res.status(200).json({ success: true, message: "Offer added successfully", product });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OFFER_ADDED_SUCCESSFULLY, product });
   } catch (error) {
     console.error("Error adding offer:", error);
-    res.status(500).json({ success: false, message: "Failed to add offer", error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_ADD_OFFER, error: error.message });
   }
 };
 
@@ -214,7 +217,7 @@ const removeProductOffer = async (req, res) => {
     );
 
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
     // Update sale prices for all variants of this product
@@ -251,10 +254,10 @@ const removeProductOffer = async (req, res) => {
       await cart.save();
     }
 
-    res.status(200).json({ success: true, message: "Offer removed successfully", product });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OFFER_REMOVED_SUCCESSFULLY, product });
   } catch (error) {
     console.error("Error removing offer:", error);
-    res.status(500).json({ success: false, message: "Failed to remove offer", error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_REMOVE_OFFER, error: error.message });
   }
 };
 

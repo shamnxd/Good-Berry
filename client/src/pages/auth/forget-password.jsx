@@ -32,7 +32,7 @@ function ForgetPassword() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6" style={{ maxWidth: "310px" }}>
+    <div className="mx-auto w-full max-w-[350px] px-2 space-y-6">
       <p className="text-sm text-muted-foreground">Please enter the email address associated with your account. We&apos;ll promptly send you a link to reset your password.</p>
       <CommonForm
         formControls={forgetFormControls}

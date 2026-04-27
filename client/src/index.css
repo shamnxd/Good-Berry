@@ -2,6 +2,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -30,6 +31,7 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -57,10 +59,12 @@
     --chart-5: 340 75% 55%
   }
 }
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -70,6 +74,7 @@
   .admin-layout {
     margin-left: 250px;
   }
+
   .hero h1 {
     padding-top: 50px;
     padding-right: 150px;
@@ -88,12 +93,13 @@
   .hero .b-block {
     justify-content: end;
     padding-right: 150px;
-  } 
+  }
 
   .product-page {
-    max-width: 1350px;
+    max-width: 1400px;
   }
 }
+
 .admin-sidebar {
   height: 100vh;
 }
@@ -123,7 +129,7 @@
   transition: box-shadow 0.3s ease-in-out;
 }
 
-.verify-otp{
+.verify-otp {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -165,16 +171,20 @@
   position: absolute;
   left: 0;
   top: 0;
-  transition: background-position 0.2s ease, background-size 3  ease; 
+  transition: background-position 0.2s ease, background-size 3 ease;
 
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Hide scrollbar for WebKit browsers */
+  display: none;
+  /* Hide scrollbar for WebKit browsers */
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
-  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none;
+  /* Hide scrollbar for IE and Edge */
+  scrollbar-width: none;
+  /* Hide scrollbar for Firefox */
 }
 
 @keyframes cartEnter {
@@ -182,6 +192,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   100% {
     transform: translateX(0);
     opacity: 1;
@@ -193,6 +204,7 @@
     transform: translateX(0);
     opacity: 1;
   }
+
   100% {
     transform: translateX(100%);
     opacity: 0;
@@ -208,88 +220,71 @@
 }
 
 @media (max-width: 450px) {
-  .banner-content {
-    gap: 0px;
-  }
-  .banner-img {
-    width: 320px;
-    margin-top: 60px;
-  }
-  .hero {
-    padding: 0px;
-    margin: 0px;
-    margin-top: 0px;
-    padding-right: 28px;
-    justify-content: start;
-  }
-  .hero p {
-    font-size: 10px;
-    margin: 0px;
-    display: none;
-  }
-  .banner-buttons {
-    margin: 0px;
-    padding: 0px;
-    margin-top: 20px;
-    justify-content: end;
-  }
   .featured-products {
     padding-top: 30px;
     text-align: center;
   }
+
   .featured-products h2 {
     font-size: 28px;
-  } 
+  }
+
   .featured-products p {
     font-size: 14px;
     padding-left: 20px;
     padding-right: 20px;
   }
-  .featured-products-grid {
-    grid-template-columns: 1fr;
-    padding-left: 20px;
-    padding-right: 20px;
-  }
+
   .blendfruits-premium {
     padding: 0px;
     margin: 0px;
     padding-left: 10px;
     padding-right: 10px;
   }
+
   .blendfruits-premium img {
     margin: 0px;
   }
+
   .blendjuice {
     margin: 0px;
     padding-left: 20px;
     padding-right: 20px;
   }
+
   .blendjuice h2 {
     font-size: 30px;
   }
+
   .blendjuice h3 {
     font-size: 15px;
     margin-bottom: 1px;
   }
+
   .blendjuice p {
     font-size: 13px;
   }
+
   .our-products h2 {
     font-size: 30px;
   }
+
   .our-products p {
     font-size: 14px;
     padding-left: 20px;
     padding-right: 20px;
   }
+
   .our-categorys {
     gap: 0px;
     margin: 0px;
     padding: 0px;
   }
+
   .our-categorys span {
     font-size: 10px;
   }
+
   .our-product-move {
     margin-top: 10px;
     padding-bottom: 0px;

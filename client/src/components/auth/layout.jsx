@@ -9,7 +9,7 @@ function AuthLayout() {
     <ShopHeader/>
     <div className="min-h-screen w-full shop-header">
     <Breadcrumbs/>
-      <div className="flex flex-1 items-center justify-center bg-background px-10 py-12 sm:px-6 lg:px-8">
+      <div className="flex flex-1 items-center justify-center bg-background px-0 lg:px-8 py-12">
         <Outlet />
       </div>
       <Footer/> 

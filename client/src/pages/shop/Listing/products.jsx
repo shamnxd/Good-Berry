@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import { ChevronRight, Menu } from "lucide-react"
+import { ChevronRight, Menu, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PriceFilter, CategoryFilter, FlavorFilter, StatusFilter, MobileFilters } from "@/components/ui/filters"
 import { cn } from "@/lib/utils"
@@ -26,10 +27,37 @@ export default function ShopPage() {
   const [view, setView] = useState("grid-4")
   const [sort, setSort] = useState("featured")
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setView("grid-2")
+      } else if (window.innerWidth < 1024) {
+        setView("grid-3")
+      } else {
+        setView("grid-4")
+      }
+    }
+
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [searchTerm])
+
   const [priceRange, setPriceRange] = useState([0, 8200])
   const [selectedCategories, setSelectedCategories] = useState([])
   const [selectedFlavors, setSelectedFlavors] = useState([])
   const [selectedStatuses, setSelectedStatuses] = useState([])
+  const [filterTrigger, setFilterTrigger] = useState(0)
   const dispatch = useDispatch()
 
   const { products, pagination, loading } = useSelector((state) => state.shop)
@@ -47,28 +75,23 @@ export default function ShopPage() {
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
         categories: selectedCategories,
+        search: debouncedSearchTerm,
       }),
     )
-  }, [dispatch, currentPage, sort, selectedCategories])
+  }, [dispatch, currentPage, sort, filterTrigger, debouncedSearchTerm])
+
+  const handleApplyFilters = () => {
+    setFilterTrigger(prev => prev + 1);
+  }
 
   const handlePriceFilter = () => {
-    dispatch(
-      getProducts({
-        page: currentPage,
-        limit: 10,
-        sort,
-        search: "",
-        minPrice: priceRange[0],
-        maxPrice: priceRange[1],
-        categories: selectedCategories,
-      }),
-    )
+    handleApplyFilters();
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex-1">
-        <div className="container mx-auto  max-w-[1400px] px-4 lg:pt-16 md:pt-10 pt-4">
+        <div className="container mx-auto !max-w-[1400px] px-4 lg:pt-15 md:pt-10 pt-4">
           <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8 ">
             <div className="hidden lg:block space-y-8">
               <PriceFilter value={priceRange} onValueChange={setPriceRange} onFilter={handlePriceFilter} />
@@ -96,67 +119,93 @@ export default function ShopPage() {
                   )
                 }}
               />
+              <Button 
+                className="w-full bg-[#8CC63F] hover:bg-[#7AB32F] text-white font-medium py-6 rounded-xl"
+                onClick={handleApplyFilters}
+              >
+                APPLY ALL FILTERS
+              </Button>
             </div>
 
             {/* Products */}
             <div>
               {/* Toolbar */}
-              <div className="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <MobileFilters
-                    priceRange={priceRange}
-                    setPriceRange={setPriceRange}
-                    selectedCategories={selectedCategories}
-                    setSelectedCategories={setSelectedCategories}
-                    selectedFlavors={selectedFlavors}
-                    setSelectedFlavors={setSelectedFlavors}
-                    selectedStatuses={selectedStatuses}
-                    setSelectedStatuses={setSelectedStatuses}
-                    handlePriceFilter={handlePriceFilter}
-                  />
-                  <Button
-                    variant={view === "menu" ? "secondary" : "outline"}
-                    size="icon"
-                    onClick={() => setView("menu")}
-                  >
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={view === "grid-2" ? "secondary" : "outline"}
-                    size="icon"
-                    onClick={() => setView("grid-2")}
-                    className="grid place-items-center"
-                  >
-                    <FiGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={view === "grid-3" ? "secondary" : "outline"}
-                    size="icon"
-                    onClick={() => setView("grid-3")}
-                    className="grid place-items-center"
-                  >
-                    <BiSolidGrid style={{ height: "20px", width: "20px" }} />
-                  </Button>
-                  <Button
-                    variant={view === "grid-4" ? "secondary" : "outline"}
-                    size="icon"
-                    onClick={() => setView("grid-4")}
-                    className="grid place-items-center"
-                  >
-                    <TfiLayoutGrid4Alt style={{ height: "16px", width: "16px" }} />
-                  </Button>
-                  <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sortOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="px-0 py-3 lg:p-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 pr-8 h-10 rounded-lg"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MobileFilters
+                      priceRange={priceRange}
+                      setPriceRange={setPriceRange}
+                      selectedCategories={selectedCategories}
+                      setSelectedCategories={setSelectedCategories}
+                      selectedFlavors={selectedFlavors}
+                      setSelectedFlavors={setSelectedFlavors}
+                      selectedStatuses={selectedStatuses}
+                      setSelectedStatuses={setSelectedStatuses}
+                      handleApplyFilters={handleApplyFilters}
+                    />
+                    <Button
+                      variant={view === "menu" ? "secondary" : "outline"}
+                      size="icon"
+                      onClick={() => setView("menu")}
+                      className="!rounded-lg"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={view === "grid-2" ? "secondary" : "outline"}
+                      size="icon"
+                      onClick={() => setView("grid-2")}
+                      className="grid place-items-center lg:hidden !rounded-lg"
+                    >
+                      <FiGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={view === "grid-3" ? "secondary" : "outline"}
+                      size="icon"
+                      onClick={() => setView("grid-3")}
+                      className="grid place-items-center hidden sm:grid lg:hidden !rounded-lg"
+                    >
+                      <BiSolidGrid style={{ height: "20px", width: "20px" }} />
+                    </Button>
+                    <Button
+                      variant={view === "grid-4" ? "secondary" : "outline"}
+                      size="icon"
+                      onClick={() => setView("grid-4")}
+                      className="grid place-items-center hidden sm:grid !rounded-lg"
+                    >
+                      <TfiLayoutGrid4Alt style={{ height: "16px", width: "16px" }} />
+                    </Button>
+                    <Select value={sort} onValueChange={setSort}>
+                      <SelectTrigger className="w-[180px] h-10 rounded-lg">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 {loading ? (
                   <Skeleton className="h-4 w-48" />
@@ -170,16 +219,16 @@ export default function ShopPage() {
               {/* Product grid */}
               <div
                 className={cn(
-                  "grid gap-6 lg:pt-4 pt-2 lg:pl-4 pl-2",
-                  view === "grid-4" && "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-                  view === "grid-3" && "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-                  view === "grid-2" && "grid-cols-1 sm:grid-cols-2",
+                  "grid gap-3 sm:gap-6 lg:pt-4 pt-2 lg:pl-4 pl-0",
+                  view === "grid-4" && "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                  view === "grid-3" && "grid-cols-2 md:grid-cols-3",
+                  view === "grid-2" && "grid-cols-2",
                   view === "menu" && "grid-cols-1",
                 )}
               >
                 {loading
                   ? Array.from({ length: 8 }).map((_, index) => <ProductCardSkeleton key={index} />)
-                  : products.map((product) => <ProductCard key={product._id} product={product} id={product._id} />)}
+                  : products.map((product) => <ProductCard key={product._id} product={product} id={product._id} view={view} />)}
               </div>
 
               {/* Pagination */}

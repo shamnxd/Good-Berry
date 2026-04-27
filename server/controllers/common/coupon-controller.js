@@ -1,6 +1,9 @@
 const Coupon = require('../../models/Coupon');
 const Order = require('../../models/Order');
 const Cart = require('../../models/Cart');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const couponController = {
   getAllCoupons: async (req, res) => {
@@ -37,18 +40,18 @@ const couponController = {
         }
       }
 
-      res.status(200).json({
+      res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: "Coupons fetched successfully",
+        message: MESSAGES.COUPONS_FETCHED_SUCCESSFULLY,
         coupons,
         totalPages: Math.ceil(totalCoupons / limit),
         currentPage: parseInt(page),
       });
     } catch (error) {
       console.error("Error fetching coupons:", error);
-      res.status(500).json({
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: "Failed to fetch coupons",
+        message: MESSAGES.FAILED_TO_FETCH_COUPONS,
         error: error.message,
       });
     }
@@ -61,25 +64,25 @@ const couponController = {
 
       const existingCoupon = await Coupon.findOne({ code });
       if (existingCoupon) {
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: "Coupon code already exists",
+          message: MESSAGES.COUPON_CODE_ALREADY_EXISTS,
         });
       }
 
       const newCoupon = new Coupon({ code, description, discount, startDate, endDate, usageLimit, minimumAmount, status });
       const savedCoupon = await newCoupon.save();
 
-      res.status(201).json({
+      res.status(HTTP_STATUS.CREATED).json({
         success: true,
-        message: "Coupon added successfully",
+        message: MESSAGES.COUPON_ADDED_SUCCESSFULLY,
         coupon: savedCoupon,
       });
     } catch (error) {
       console.error("Error adding coupon:", error);
-      res.status(500).json({
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: "Failed to add coupon",
+        message: MESSAGES.FAILED_TO_ADD_COUPON,
         error: error.message,
       });
     }
@@ -93,9 +96,9 @@ const couponController = {
     try {
       const existingCoupon = await Coupon.findOne({ code, _id: { $ne: id } });
       if (existingCoupon) {
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: "Coupon code already exists",
+          message: MESSAGES.COUPON_CODE_ALREADY_EXISTS,
         });
       }
 
@@ -106,17 +109,17 @@ const couponController = {
       );
 
       if (!updatedCoupon) {
-        return res.status(404).json({ message: "Coupon not found" });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.COUPON_NOT_FOUND });
       }
 
       res.json({
         success: true,
-        message: "Coupon updated successfully",
+        message: MESSAGES.COUPON_UPDATED_SUCCESSFULLY,
         coupon: updatedCoupon,
       });
     } catch (error) {
       console.error("Error updating coupon:", error);
-      res.status(500).json({ message: "Failed to update coupon", error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_UPDATE_COUPON, error: error.message });
     }
   },
 
@@ -128,17 +131,17 @@ const couponController = {
       const deletedCoupon = await Coupon.findByIdAndDelete(id);
 
       if (!deletedCoupon) {
-        return res.status(404).json({ message: "Coupon not found" });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.COUPON_NOT_FOUND });
       }
 
       res.json({
         success: true,
-        message: "Coupon deleted successfully",
+        message: MESSAGES.COUPON_DELETED_SUCCESSFULLY,
         coupon: deletedCoupon,
       });
     } catch (error) {
       console.error("Error deleting coupon:", error);
-      res.status(500).json({ message: "Failed to delete coupon", error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_DELETE_COUPON, error: error.message });
     }
   },
 
@@ -152,7 +155,7 @@ const couponController = {
       if (!coupon) {
         return res.json({
           success: false,
-          message: 'Invalid or expired coupon code',
+          message: MESSAGES.INVALID_OR_EXPIRED_COUPON_CODE,
         });
       }
 
@@ -161,7 +164,7 @@ const couponController = {
       if (!cart) {
         return res.json({
           success: false,
-          message: 'Cart not found',
+          message: MESSAGES.CART_NOT_FOUND,
         });
       }
 
@@ -172,14 +175,14 @@ const couponController = {
       if (coupon.startDate > new Date() || coupon.endDate < new Date()) {
         return res.json({
           success: false,
-          message: 'Coupon is not valid at this time',
+          message: MESSAGES.COUPON_IS_NOT_VALID_AT_THIS_TIME,
         });
       }
 
       if (coupon.usageLimit <= coupon.used) {
         return res.json({
           success: false,
-          message: 'Coupon usage limit has been reached',
+          message: MESSAGES.COUPON_USAGE_LIMIT_HAS_BEEN_REACHED,
         });
       }
 
@@ -187,7 +190,7 @@ const couponController = {
       if (existingOrder) {
         return res.json({
           success: false,
-          message: 'You have already used this coupon',
+          message: MESSAGES.YOU_HAVE_ALREADY_USED_THIS_COUPON,
         });
       }
 
@@ -200,7 +203,7 @@ const couponController = {
 
       await coupon.save();
 
-      res.status(200).json({
+      res.status(HTTP_STATUS.OK).json({
         success: true,
         message: `Coupon applied (${coupon.code} - ${coupon.discount} off)`,
         discount: coupon.discount,
@@ -208,9 +211,9 @@ const couponController = {
       });
     } catch (error) {
       console.error('Error applying coupon:', error);
-      res.status(500).json({
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Failed to apply coupon',
+        message: MESSAGES.FAILED_TO_APPLY_COUPON,
         error: error.message,
       });
     }
@@ -232,13 +235,13 @@ const couponController = {
       if (existingOrder) {
         return res.json({
           success: false,
-          message: 'You have already used this coupon',
+          message: MESSAGES.YOU_HAVE_ALREADY_USED_THIS_COUPON,
         });
       }
 
       res.json({
         success: true,
-        message: 'Coupon found',
+        message: MESSAGES.COUPON_FOUND,
         discount: coupon.discount,
         couponId: coupon._id,
       });

@@ -5,7 +5,9 @@ import { Switch } from "@/components/ui/switch";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, PlusCircle, Trash } from "lucide-react";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Table,
   TableBody,
   TableCell,
@@ -72,11 +74,11 @@ function Categorys() {
     if (offerPercentage) {
       const data = await dispatch(addCategoryOffer({ categoryId: offerCategory._id, offerPercentage: parseInt(offerPercentage) }));
       if (data.payload.success) {
-        toast({ title: "Success", description: data.payload.message });
+        toast({ title: MESSAGES.SUCCESS, description: data.payload.message });
         loadCategories(currentPage);
       } else {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: data.payload.message || "Failed to add offer",
           variant: "destructive",
         });
@@ -94,11 +96,11 @@ function Categorys() {
   const confirmRemoveOffer = async () => {
     const data = await dispatch(removeCategoryOffer({ categoryId: offerCategory._id }));
     if (data.payload.success) {
-      toast({ title: "Success", description: data.payload.message });
+      toast({ title: MESSAGES.SUCCESS, description: data.payload.message });
       loadCategories(currentPage);
     } else {
       toast({
-        title: "Error",
+        title: MESSAGES.ERROR,
         description: data.payload.message || "Failed to remove offer",
         variant: "destructive",
       });

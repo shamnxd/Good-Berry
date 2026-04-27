@@ -5,6 +5,9 @@ const Variant = require('../../models/Variant');
 const Wallet = require('../../models/Wallet');
 const Coupon = require('../../models/Coupon');
 const User = require('../../models/User');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const orderController = {  
   createOrder : async (req, res) => {
@@ -18,8 +21,8 @@ const orderController = {
       } = req.body;
       
       if (!addressId || !shippingMethod || !paymentMethod) {
-        return res.status(400).json({ 
-          message: 'Address, shipping method, and payment method are required' 
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
+          message: MESSAGES.ADDRESS_SHIPPING_METHOD_AND_PAYMENT_METHOD_ARE_REQUIRED 
         });
       }
 
@@ -29,19 +32,19 @@ const orderController = {
       });
       
       if (!address) {
-        return res.status(400).json({ message: 'Invalid address' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.INVALID_ADDRESS });
       }
   
       const cart = await Cart.findOne({ userId: req.user.id });
       if (!cart || cart.items.length === 0) {
-        return res.status(400).json({ message: 'Cart is empty' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.CART_IS_EMPTY });
       }
 
       for (const cartItem of cart.items) {
         const variant = await Variant.findOne({ productId: cartItem.productId, title : cartItem.flavor });
 
         if (!variant) {
-          return res.status(400).json({ 
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
             message: `Product variant not found for product ID: ${cartItem.productId}` 
           });
         }
@@ -51,13 +54,13 @@ const orderController = {
         );
 
         if (!packSize) {
-          return res.status(400).json({ 
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
             message: `Pack size ${cartItem.packageSize} not found for this product` 
           });
         }
 
         if (packSize.quantity < cartItem.quantity) {
-          return res.status(400).json({ 
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
             message: `Insufficient quantity available for ${cartItem.name}. Required: ${cartItem.quantity}, Available: ${packSize.quantity}` 
           });
         }
@@ -108,10 +111,10 @@ const orderController = {
       await order.save();
       await order.populate('addressId');
       
-      res.status(201).json(order);
+      res.status(HTTP_STATUS.CREATED).json(order);
     } catch (error) {
-      res.status(500).json({ 
-        message: 'Error creating order', 
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
+        message: MESSAGES.ERROR_CREATING_ORDER, 
         error: error.message 
       });
     }
@@ -150,8 +153,8 @@ const orderController = {
         totalOrders: total
       });
     } catch (error) {
-      res.status(500).json({ 
-        message: 'Error fetching orders', 
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
+        message: MESSAGES.ERROR_FETCHING_ORDERS, 
         error: error.message 
       });
     }
@@ -165,13 +168,13 @@ const orderController = {
       }).populate('addressId');
       
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
       
       res.json(order);
     } catch (error) {
-      res.status(500).json({ 
-        message: 'Error fetching order', 
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
+        message: MESSAGES.ERROR_FETCHING_ORDER, 
         error: error.message 
       });
     }
@@ -182,7 +185,7 @@ const orderController = {
         const { itemId, reason } = req.body;
 
         if (!reason) {
-            return res.status(400).json({ message: 'Cancellation reason is required' });
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.CANCELLATION_REASON_IS_REQUIRED });
         }
 
         const order = await Order.findOne({
@@ -191,16 +194,16 @@ const orderController = {
         }).populate('addressId').populate('couponId');
 
         if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
         }
 
         const item = order.items.id(itemId);
         if (!item) {
-            return res.status(404).json({ message: 'Item not found in order' });
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ITEM_NOT_FOUND_IN_ORDER });
         }
 
         if (!['processing', 'delivered'].includes(item.status)) {
-            return res.status(400).json({ message: `Item cannot be cancelled in ${item.status} status` });
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.ITEM_CANNOT_BE_CANCELLED_IN_ITEM_STATUS_STATUS });
         }
 
         const variant = await Variant.findOne({
@@ -209,7 +212,7 @@ const orderController = {
         });
 
         if (!variant) {
-            return res.status(404).json({ message: 'Product variant not found' });
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.PRODUCT_VARIANT_NOT_FOUND });
         }
 
         const packSize = variant.packSizePricing.find(pack => pack.size === item.packageSize);
@@ -274,7 +277,7 @@ const orderController = {
 
         res.json(order);
     } catch (error) {
-        res.status(500).json({ message: 'Error cancelling item', error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_CANCELLING_ITEM, error: error.message });
     }
   },
 
@@ -283,7 +286,7 @@ const orderController = {
       const { itemId, reason } = req.body;
 
       if (!reason) {
-        return res.status(400).json({ message: 'Return reason is required' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.RETURN_REASON_IS_REQUIRED });
       }
 
       const order = await Order.findOne({
@@ -292,18 +295,18 @@ const orderController = {
       }).populate('addressId');
 
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       
       const item = order.items.id(itemId);
       if (!item) {
-        return res.status(404).json({ message: 'Item not found in order' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ITEM_NOT_FOUND_IN_ORDER });
       }
 
       if (item.status !== 'delivered') {
-        return res.status(400).json({
-          message: `Item cannot be returned in ${item.status} status`
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          message: MESSAGES.ITEM_CANNOT_BE_RETURNED_IN_ITEM_STATUS_STATUS
         });
       }
 
@@ -313,8 +316,8 @@ const orderController = {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays > 5) {
-        return res.status(400).json({
-          message: 'Return period has expired. You can only return items within 5 days of delivery.'
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          message: MESSAGES.RETURN_PERIOD_HAS_EXPIRED_YOU_CAN_ONLY_RETURN_ITEMS_WITHIN_5_DAYS_OF_DELIVERY
         });
       }
 
@@ -331,8 +334,8 @@ const orderController = {
 
       res.json(order);
     } catch (error) {
-      res.status(500).json({
-        message: 'Error requesting return',
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        message: MESSAGES.ERROR_REQUESTING_RETURN,
         error: error.message
       });
     }

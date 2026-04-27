@@ -1,5 +1,8 @@
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const getFeatured = async (req, res) => {
   try {
@@ -49,6 +52,7 @@ const getFeatured = async (req, res) => {
           categoryName: "$categoryDetails.name",
           "firstVariant.title": 1,
           "firstVariant.description": 1,
+          "firstVariant.price": { $arrayElemAt: ["$firstVariant.packSizePricing.price", 0] },
           "firstVariant.salePrice": { $arrayElemAt: ["$firstVariant.packSizePricing.salePrice", 0] },
           "firstVariant.images": { $arrayElemAt: ["$firstVariant.images", 0] }, 
         },
@@ -61,7 +65,7 @@ const getFeatured = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching featured products:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
   }
 };
 

@@ -20,30 +20,54 @@ export function ProductSlider({ products }) {
   }, [emblaApi]);
 
   return (
-    <div className="our-product-move relative group pb-10"> {/* Moved group class here */}
-      <div ref={emblaRef} className="overflow-x-auto no-scrollbar" style={{ height: "360px" }}>
+    <div className="our-product-move relative group pb-10">
+      <div ref={emblaRef} className="overflow-hidden">
+        <div className="flex gap-4 sm:gap-8 px-4">
+          {products?.map((product, i) => {
+            const discountPercentage = (((product.firstVariant.price - product.firstVariant.salePrice) / product.firstVariant.price) * 100).toFixed(0);
+            const hasDiscount = discountPercentage > 0;
 
-        <div className="flex gap-8">
-          {products?.map((product, i) => (
-            <Link to={`shop/product/${product._id}`} key={i}>
-            <div
-              className="flex flex-col items-center group cursor-pointer hover:scale-105 rounded-lg hover:shadow-lg transition-all duration-300 ease-in-out hover:bg-[#ffffff]"
-            >
-              <div className="relative mb-4 w-60 h-60 flex-shrink-0">
-                <img
-                  src={product.firstVariant.images}
-                  alt="Decorative leaf"
-                  className="mx-auto h-full object-cover w-full"
-                />
-              </div>
-              <h3 className="text-sm font-medium mb-1">{product.name}</h3>
-              <p className="text-xs text-gray-500 mb-1">{product.categoryName}</p>
-              <p className="text-sm font-medium text-[#8CC63F] mb-3">
-                ₹{product.firstVariant.salePrice}
-              </p>
-            </div>
-            </Link>
-          ))}
+            return (
+              <Link to={`/shop/product/${product._id}`} key={i} className="flex-none w-[150px] sm:w-[280px]">
+                <div
+                  className="flex flex-col items-center group cursor-pointer hover:scale-[1.02] rounded-2xl p-2 sm:p-4 hover:bg-white hover:shadow-xl transition-all duration-500 ease-in-out border border-transparent hover:border-gray-50 h-full"
+                >
+                  <div className="relative mb-3 w-full aspect-square flex-shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                    <img
+                      src={product.firstVariant.images || "/placeholder.svg"}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+                      {hasDiscount && (
+                        <div className="bg-[#8cc63f] text-white rounded-full w-7 h-7 sm:w-11 sm:h-11 flex items-center justify-center text-[7px] sm:text-[10px] font-bold shadow-sm">
+                          -{discountPercentage}%
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-bold text-gray-800 mb-1 line-clamp-1 w-full text-center">
+                    {product.name}
+                  </h3>
+                  {product.description && (
+                    <p className="text-[10px] sm:text-sm text-gray-500 line-clamp-1 mb-3 text-center leading-tight sm:leading-normal">
+                      {product.description}
+                    </p>
+                  )}
+                  <div className="mt-auto flex items-baseline gap-2">
+                    <p className="text-sm sm:text-2xl font-bold text-[#8CC63F]">
+                      ₹{product.firstVariant.salePrice.toFixed(0)}
+                    </p>
+                    {hasDiscount && (
+                      <p className="text-[10px] sm:text-sm text-gray-400 line-through">
+                        ₹{product.firstVariant.price.toFixed(0)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
       <div className="slider-controls">

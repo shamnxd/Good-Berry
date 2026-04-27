@@ -11,22 +11,19 @@ function AdminHeader({ setOpen }) {
   }
 
   return (
-    <header
-      className=" top-0 left-0 right-0 flex items-center justify-between px-4 py-3 border-b fixed"
-      style={{ top: 0, left: 0, right: 0, backgroundColor: "#ffffff", zIndex: 999, }}
-    >
-      <Button onClick={() => setOpen(true)} className="lg:hidden sm:block">
-        <AlignJustify />
+    <header className="fixed top-0 right-0 left-0 lg:left-72 h-20 flex items-center justify-between px-6 lg:px-8 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40">
+      <Button onClick={() => setOpen(true)} className="lg:hidden" variant="ghost" size="icon">
+        <AlignJustify className="h-6 w-6 text-slate-700" />
         <span className="sr-only">Toggle Menu</span>
       </Button>
       <div className="flex flex-1 justify-end">
         <Button
           onClick={handleLogout}
           variant="outline"
-          className="inline-flex gap-2 items-center rounded-md px-4 py-2 text-sm font-medium outline outline-1"
+          className="inline-flex gap-2 items-center rounded-lg px-4 py-2 text-sm font-medium border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-200 shadow-sm"
         >
-          <LogOut />
-          Logout
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">Logout</span>
         </Button>
       </div>
     </header>

@@ -1,5 +1,7 @@
 const User = require('../../models/User');
 const crypto = require('crypto');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
 
 const referralController = {
   applyReferralCode: async (req, res) => {
@@ -7,33 +9,33 @@ const referralController = {
       const { referralCode } = req.body;
 
       if (!referralCode) {
-        return res.status(400).json({ message: 'Referral code is required' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.REFERRAL.REQUIRED });
       }
 
       const user = await User.findById(req.user.id);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.USER.NOT_FOUND });
       }
 
       if (user.referredBy) {
-        return res.status(400).json({ message: 'Referral code has already been applied' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.REFERRAL.ALREADY_APPLIED });
       }
 
       if (user.referralCode === referralCode) {
-        return res.status(400).json({ message: 'You cannot use your own referral code' });
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.REFERRAL.CANNOT_USE_OWN });
       }
 
       const referrer = await User.findOne({ referralCode });
       if (!referrer) {
-        return res.status(404).json({ message: 'Invalid referral code' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.REFERRAL.INVALID });
       }
 
       user.referredBy = referralCode;
       await user.save();
 
-      res.status(200).json({ success: true, message: 'Referral code applied successfully' });
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.REFERRAL.SUCCESS });
     } catch (error) {
-      res.status(500).json({ message: 'Error applying referral code', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.REFERRAL.APPLY_ERROR, error: error.message });
     }
   },
 
@@ -41,7 +43,7 @@ const referralController = {
     try {
       const user = await User.findById(req.user.id);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.USER.NOT_FOUND });
       }
 
       if (!user.referralCode) {
@@ -49,9 +51,9 @@ const referralController = {
         await user.save();
       }
 
-      res.status(200).json({ referralCode: user.referralCode, appliedCode: user.referredBy });
+      res.status(HTTP_STATUS.OK).json({ referralCode: user.referralCode, appliedCode: user.referredBy });
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching referral code', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.REFERRAL.FETCH_ERROR, error: error.message });
     }
   },
 
@@ -59,14 +61,14 @@ const referralController = {
     try {
       const user = await User.findById(req.user.id);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.USER.NOT_FOUND });
       }
 
       const referredCount = await User.countDocuments({ referredBy: user.referralCode });
 
-      res.status(200).json({ referredCount });
+      res.status(HTTP_STATUS.OK).json({ referredCount });
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching referred count', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.REFERRAL.FETCH_COUNT_ERROR, error: error.message });
     }
   }
 };

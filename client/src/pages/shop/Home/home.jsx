@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ProductCategorySelector } from "./product-category-selector"
 import { ProductSlider } from "./product-slider"
 import { FeaturedProductCard } from "./featured-product-card"
-import { featuredProducts, getProducts } from "@/store/shop-slice"
+import { featuredProducts, getProducts, getCategories } from "@/store/shop-slice"
 import { categoryTitle, blendjuice } from "@/assets/images"
 import HeroBanner from "@/components/ui/hero-banner"
 import { useNavigate } from "react-router-dom"
@@ -15,21 +15,37 @@ function ShoppingHome() {
   const navigate = useNavigate()
 
   const dispatch = useDispatch()
+  const { featuredProds, products, categories } = useSelector((state) => state.shop)
+  const [activeCategory, setActiveCategory] = React.useState("")
+
   useEffect(() => {
     dispatch(featuredProducts())
-    dispatch(getProducts({ page, limit }))
+    dispatch(getCategories())
   }, [dispatch])
 
-  const { featuredProds, products } = useSelector((state) => state.shop)
-  const [activeCategory, setActiveCategory] = React.useState("ice-cream")
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0]._id)
+    }
+  }, [categories, activeCategory])
+
+  useEffect(() => {
+    if (activeCategory) {
+      dispatch(getProducts({ 
+        page: 1, 
+        limit: 10, 
+        categories: activeCategory 
+      }))
+    }
+  }, [dispatch, activeCategory])
 
   return (
     <div className="flex min-h-screen flex-col">
       <HeroBanner />
 
       {/* Featured Products Section */}
-      <section className="featured-products bg-white px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+      <section className="featured-products bg-white px-2 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto !max-w-[1400px]">
           <div className="text-center mb-8">
             <h2 className="text-5xl font-signika font-bold mb-4">Featured Products</h2>
             <div className="flex justify-center mb-2">
@@ -43,16 +59,11 @@ function ShoppingHome() {
             </div>
             <p className="text-gray-600 text-sm">There are many variations of passages of lorem ipsum available</p>
           </div>
-          <div className="featured-products-grid grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4" style={{ maxWidth: "1100px" }}>
+          <div className="featured-products-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 mx-auto max-w-[1100px]">
             {featuredProds.map((product, i) => (
               <FeaturedProductCard
                 key={i}
-                id={product._id}
-                title={product.name}
-                name={product.firstVariant.title}
-                category={product.categoryName}
-                price={product.firstVariant.salePrice}
-                imageUrl={product.firstVariant.images}
+                product={product}
               />
             ))}
           </div>
@@ -60,20 +71,20 @@ function ShoppingHome() {
       </section>
 
       {/* Blend Fruits Premium Section */}
-      <section className="blendfruits-premium tpx-4 py-16 sm:px-6 lg:px-8 bg-white">
-        <div className="mx-auto max-w-8xl">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+      <section className="blendfruits-premium px-4 py-16 sm:px-6 lg:px-8 bg-white">
+        <div className="mx-auto !max-w-[1430px]">
+          <div className="grid grid-cols-1 gap-5 lg:gap-12 lg:grid-cols-2 items-center">
             <div className="relative">
               <img
                 src={blendjuice || "/placeholder.svg"}
                 alt="Fresh fruits"
                 width={692}
                 height={526}
-                className="blendjuice rounded-lg"
+                className="blendjuice rounded-lg !px-3"
               />
             </div>
-            <div className="blendjuice">
-              <h2 className="text-5xl font-bold mb-4">Blend fruits premium drink</h2>
+            <div className="blendjuice !px-4">
+              <h2 className="text-5xl font-bold mb-5">Blend fruits premium drink</h2>
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <h3 className="font-semibold mb-2">FRUITS</h3>
@@ -112,7 +123,11 @@ function ShoppingHome() {
             <p className="text-gray-600 text-sm">There are many variations of passages of lorem ipsum available</p>
           </div>
 
-          <ProductCategorySelector activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <ProductCategorySelector 
+            activeCategory={activeCategory} 
+            categories={categories}
+            onCategoryChange={setActiveCategory} 
+          />
 
           <ProductSlider products={products} />
         </div>

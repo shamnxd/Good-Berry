@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { getProducts, getCategories } from "@/store/shop-slice";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import ProductCard from "./product-card";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -88,21 +88,21 @@ export default function SearchProduct() {
   };
 
   return (
-    <div className="container mx-auto p-4 lg:p-10">
+    <div className="container max-w-[1400px] mx-auto p-4 mt-3">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Search Products</h1>
+        <h1 className="lg:text-2xl text-xl font-bold">Search Products</h1>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+        <div className="flex flex-row gap-4 w-full lg:w-auto">
           <Input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64"
+            className="w-full lg:w-64"
           />
 
           <Select value={sortOption} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="!w-40 lg:w-48">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -122,39 +122,9 @@ export default function SearchProduct() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
             {products.map((product) => (
-              <Card key={product._id} className="flex flex-col h-full">
-                <CardContent
-                  className="flex-grow cursor-pointer"
-                  onClick={() => navigate(`/shop/product/${product._id}`)}
-                >
-                  <div className="aspect-square relative my-4">
-                    <img
-                      src={product.firstVariant?.images || "/placeholder.svg"}
-                      alt={product.name}
-                      className="object-cover w-full h-full rounded-md"
-                    />
-                    {product.isNew && (
-                      <Badge className="absolute text-center left-2 top-2 bg-[#438e44] w-12 h-12">
-                        {product.isNew && "New"}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="font-semibold">{product.name}</p>
-                  <p className="text-sm text-gray-600 line-clamp-3">
-                    {product.description}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-between items-center">
-                  <p className="text-lg font-bold">
-                    ₹{product.firstVariant?.salePrice.toFixed(2)}
-                  </p>
-                  <p className="text-sm gray-600">
-                    {product.firstVarient?.price.toFixed(2)}
-                  </p>
-                </CardFooter>
-              </Card>
+              <ProductCard key={product._id} product={product} id={product._id} view="grid-default" />
             ))}
           </div>
 

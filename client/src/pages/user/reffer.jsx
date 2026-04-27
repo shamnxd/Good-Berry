@@ -47,15 +47,15 @@ export default function ReferAndEarn() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-2">
-      <Card className="w-full mx-auto">
-        <CardHeader>
+    <div className="container mx-auto">
+      <Card className="w-full mx-auto !rounded-none !border-0 !shadow-none">
+        <CardHeader className="p-3 lg:p-4">
           <CardTitle>Refer a Friend & Earn</CardTitle>
           <CardDescription>
             Share your unique code and both you and your friend get FLAT 100
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-3 lg:p-4">
           <div className="flex items-center justify-between bg-[#f0f7e6] rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <Users className="h-8 w-8 text-[#7eb53f]" />

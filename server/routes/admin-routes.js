@@ -1,4 +1,6 @@
 const express = require('express');
+const ROUTES = require('../constants/routes');
+
 const router = express.Router();
 const categoryController = require('../controllers/admin/category-controller');
 const userController = require('../controllers/admin/user-controller');
@@ -13,46 +15,46 @@ const admin = require('../middleware/admin-auth');
 router.use(admin);
 
 // Customer
-router.get('/users', userController.getAllUsers);
-router.patch('/users/:id/block', userController.updateUser);
+router.get(ROUTES.ADMIN.USERS, userController.getAllUsers);
+router.patch(ROUTES.ADMIN.USERS_BY_ID_BLOCK, userController.updateUser);
 
 // Product
-router.get('/products', productController.getAllProducts);
-router.post('/products', productController.addProduct);
-router.get('/products/:id', productController.getProduct);
-router.put('/products/:id', productController.updateProduct);
-router.patch('/products/:id', productController.unListProduct);
+router.get(ROUTES.ADMIN.PRODUCTS, productController.getAllProducts);
+router.post(ROUTES.ADMIN.PRODUCTS, productController.addProduct);
+router.get(ROUTES.ADMIN.PRODUCTS_BY_ID, productController.getProduct);
+router.put(ROUTES.ADMIN.PRODUCTS_BY_ID, productController.updateProduct);
+router.patch(ROUTES.ADMIN.PRODUCTS_BY_ID, productController.unListProduct);
 
 // Category
-router.post('/categories', categoryController.addCategory);
-router.get('/categories', categoryController.getAllCategories);
-router.put('/categories/:id', categoryController.updateCategory);
+router.post(ROUTES.ADMIN.CATEGORIES, categoryController.addCategory);
+router.get(ROUTES.ADMIN.CATEGORIES, categoryController.getAllCategories);
+router.put(ROUTES.ADMIN.CATEGORIES_BY_ID, categoryController.updateCategory);
 
 // Offer
-router.post('/category/offer', offerController.addCategoryOffer);
-router.post('/category/offer/remove', offerController.removeCategoryOffer);
+router.post(ROUTES.ADMIN.CATEGORY_OFFER, offerController.addCategoryOffer);
+router.post(ROUTES.ADMIN.CATEGORY_OFFER_REMOVE, offerController.removeCategoryOffer);
 
 // Product Offer
-router.post('/products/:id/offer', offerController.addProductOffer);
-router.delete('/products/:id/offer', offerController.removeProductOffer);
+router.post(ROUTES.ADMIN.PRODUCTS_BY_ID_OFFER, offerController.addProductOffer);
+router.delete(ROUTES.ADMIN.PRODUCTS_BY_ID_OFFER, offerController.removeProductOffer);
 
 // Coupon
-router.get('/coupons', couponController.getAllCoupons);
-router.post('/coupons', couponController.addCoupon);
-router.put('/coupons/:id', couponController.updateCoupon);
-router.delete('/coupons/:id', couponController.deleteCoupon);
+router.get(ROUTES.ADMIN.COUPONS, couponController.getAllCoupons);
+router.post(ROUTES.ADMIN.COUPONS, couponController.addCoupon);
+router.put(ROUTES.ADMIN.COUPONS_BY_ID, couponController.updateCoupon);
+router.delete(ROUTES.ADMIN.COUPONS_BY_ID, couponController.deleteCoupon);
 
 // Order
-router.get('/orders', orderController.getAllOrders);
-router.get('/orders/:id', orderController.getOrderById);
-router.patch('/orders/:orderId/items/:productId', orderController.updateOrderItemStatus);
-router.put('/orders/:orderId/items/:productId/approve-return', orderController.approveReturnRequest);
-router.put('/orders/:orderId/items/:productId/reject-return', orderController.rejectReturnRequest);
+router.get(ROUTES.ADMIN.ORDERS, orderController.getAllOrders);
+router.get(ROUTES.ADMIN.ORDERS_BY_ID, orderController.getOrderById);
+router.patch(ROUTES.ADMIN.ORDERS_BY_ORDERID_ITEMS_BY_PRODUCTID, orderController.updateOrderItemStatus);
+router.put(ROUTES.ADMIN.ORDERS_BY_ORDERID_ITEMS_BY_PRODUCTID_APPROVE_RETURN, orderController.approveReturnRequest);
+router.put(ROUTES.ADMIN.ORDERS_BY_ORDERID_ITEMS_BY_PRODUCTID_REJECT_RETURN, orderController.rejectReturnRequest);
 
 // Sales Report
-router.get('/sales-report', salesReportController.generateSalesReport);
+router.get(ROUTES.ADMIN.SALES_REPORT, salesReportController.generateSalesReport);
 
 // Dashboard
-router.get('/dashboard', dashboardController.getDashboardData);
+router.get(ROUTES.ADMIN.DASHBOARD, dashboardController.getDashboardData);
 
 module.exports = router;

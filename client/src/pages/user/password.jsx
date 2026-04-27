@@ -8,6 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import { updatePassword } from "@/store/user-slice/account-slice";
 import { useToast } from "@/hooks/use-toast";
+import MESSAGES from '../../constants/messages';
+
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -20,7 +22,7 @@ const passwordSchema = z.object({
     ),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: MESSAGES.PASSWORDS_DON_T_MATCH,
   path: ["confirmPassword"],
 })
 
@@ -74,11 +76,8 @@ const PasswordPage = () => {
   const isFormEmpty = !currentPassword || !newPassword || !confirmPassword; 
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Change Password</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="rounded-none !shadow-none !border-none">
+      <CardContent className="space-y-4 px-3 mt-5 lg:px-4">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
@@ -86,6 +85,7 @@ const PasswordPage = () => {
                 Current Password
               </label>
               <Input
+                className="max-w-[400px]"
                 type="password"
                 placeholder="Enter current password"
                 {...register("currentPassword")}
@@ -101,6 +101,7 @@ const PasswordPage = () => {
                 New Password
               </label>
               <Input
+                className="max-w-[400px]"
                 type="password"
                 placeholder="Enter new password"
                 {...register("newPassword")}
@@ -116,6 +117,7 @@ const PasswordPage = () => {
                 Confirm Password
               </label>
               <Input
+                className="max-w-[400px]"
                 type="password"
                 placeholder="Confirm new password"
                 {...register("confirmPassword")}

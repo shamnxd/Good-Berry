@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import MESSAGES from '../../constants/messages';
 import {
+
   Table,
   TableBody,
   TableCell,
@@ -79,7 +81,7 @@ export default function CustomersPage() {
           });
         })
         .catch(() => {
-          toast({ title: "Something went wrong", variant: "destructive" });
+          toast({ title: MESSAGES.SOMETHING_WENT_WRONG, variant: "destructive" });
         });
       setSelectedUser(null);
     }

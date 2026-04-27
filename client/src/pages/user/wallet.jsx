@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { fetchWallet, addMoneyToWallet, fetchTransactions } from "@/store/user-slice/wallet-slice";
 import { useToast } from "@/hooks/use-toast";
+import MESSAGES from '../../constants/messages';
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -31,14 +33,14 @@ const WalletPage = () => {
     };
     if(parsedData.amount > 1000) {
       return toast({
-        title: 'Amount exeed',
-        description: 'Cant add more than 1000. please try again.',
+        title: MESSAGES.AMOUNT_EXEED,
+        description: MESSAGES.CANT_ADD_MORE_THAN_1000_PLEASE_TRY_AGAIN,
         variant: 'destructive',
       }) 
     } else if (parsedData.amount <= 0) {
       return toast({
-        title: 'Invalid amount',
-        description: 'Amount must be greater than 0.',
+        title: MESSAGES.INVALID_AMOUNT,
+        description: MESSAGES.AMOUNT_MUST_BE_GREATER_THAN_0,
         variant: 'destructive',
       })
     }
@@ -62,11 +64,11 @@ const WalletPage = () => {
   const paginatedTransactions = sortedTransactions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+    <div className="space-y-2 !p-0">
+      <Card className='!rounded-none !border-none !shadow-none !p-0'>
+        <CardHeader className="flex flex-row items-center justify-between !p-4">
           <div>
-            <CardTitle>Wallet Balance</CardTitle>
+            <CardTitle className='text-md'>Wallet Balance</CardTitle>
             <p className="text-3xl font-bold mt-2">₹{balance.toFixed(2)}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -93,14 +95,14 @@ const WalletPage = () => {
           </Dialog>
         </CardHeader>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+      <Card className='!rounded-none !border-none !shadow-none'>
+        <CardHeader className='!p-4'>
+          <CardTitle className='text-lg'>Recent Transactions</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className='!p-4 !pt-0'>
           <div className="space-y-4">
             {paginatedTransactions.map((transaction) => (
-              <div key={transaction._id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={transaction._id} className="flex items-center justify-between py-3 px-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   {transaction.type === "credit" ? (
                     <ArrowUpCircle className="w-6 h-6 text-green-500" />
@@ -124,7 +126,7 @@ const WalletPage = () => {
             ))}
           </div>
           {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-between items-center mt-6 !max-w-[350px]">
               <Button
                 variant="outline"
                 size="sm"

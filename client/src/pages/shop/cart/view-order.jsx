@@ -3,7 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchOrderById, cancelOrderItem, returnOrderItem } from "@/store/shop-slice/order-slice";
 import { Button } from "@/components/ui/button";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Card,
   CardContent,
   CardFooter,
@@ -39,11 +41,12 @@ import OrderSuccess from "./success-order";
 import PropTypes from "prop-types";
 import axios from "axios";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const OrderStatusBadge = ({ status, icon }) => (
-  <Badge variant={status === "cancelled" ? "destructive" : "outline"} className="mt-2">
+  <Badge variant={status === "cancelled" ? "destructive" : "outline"} className="mt-1 w-fit capitalize px-3 py-1 rounded-full font-medium">
     {icon}
-    <span className="ml-1">{status}</span>
+    <span className="ml-1.5">{status}</span>
   </Badge>
 );
 
@@ -54,7 +57,7 @@ const CancellationDialog = ({ onCancel, cancelReason, setCancelReason, item }) =
         Cancel Item
       </Button>
     </AlertDialogTrigger>
-    <AlertDialogContent>
+    <AlertDialogContent className="w-[92vw] max-w-md rounded-xl">
       <AlertDialogHeader>
         <AlertDialogTitle>Cancel Order Item</AlertDialogTitle>
         <AlertDialogDescription>
@@ -93,7 +96,7 @@ const ReturnDialog = ({ onReturn, returnReason, setReturnReason, item }) => (
         Return Item
       </Button>
     </AlertDialogTrigger>
-    <AlertDialogContent>
+    <AlertDialogContent className="w-[92vw] max-w-md rounded-xl">
       <AlertDialogHeader>
         <AlertDialogTitle>Return Order Item</AlertDialogTitle>
         <AlertDialogDescription>
@@ -144,74 +147,77 @@ const OrderItem = ({ item, onCancel, cancelReason, setCancelReason, onReturn, re
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="flex flex-row items-start gap-3 sm:gap-4 p-4 sm:p-4 border rounded-xl hover:bg-gray-50/50 transition-colors">
       <div 
-        className="relative cursor-pointer group"
+        className="relative cursor-pointer group flex-shrink-0"
         onClick={() => navigate(`/shop/product/${item.productId}`)}
       >
         <img
           src={item.image}
           alt={item.name}
-          className="w-24 h-24 object-cover rounded-md transition-transform group-hover:scale-105"
+          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg transition-transform group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 rounded-md transition-opacity" />
+        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 rounded-lg transition-opacity" />
       </div>
       
-      <div className="flex-grow">
+      <div className="flex-grow min-w-0">
         <div 
           className="cursor-pointer"
           onClick={() => navigate(`/shop/product/${item.productId}`)}
         >
-          <h3 className="font-semibold text-lg">
-            {item.name}
-            {item.flavor && <span className="text-gray-600"> - {item.flavor}</span>}
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">Size: {item.packageSize}</p>
-          <div className="flex items-center gap-4 mt-2">
-            <p className="text-sm">Quantity: {item.quantity}</p>
-            <p className="text-sm font-medium">
-              Price: <span className="text-[#92c949]">₹{item.price.toFixed(2)}</span>
+          <div className="flex justify-between items-start gap-2">
+            <h3 className="font-semibold text-sm sm:text-lg line-clamp-2">
+              {item.name}
+              {item.flavor && <span className="text-gray-500 font-normal hidden sm:inline"> - {item.flavor}</span>}
+            </h3>
+            <p className="text-sm font-bold text-[#92c949] flex-shrink-0">
+              ₹{item.price.toFixed(0)}
             </p>
+          </div>
+          {item.flavor && <p className="text-[10px] sm:hidden text-gray-500">{item.flavor}</p>}
+          <div className="flex items-center gap-3 mt-1 sm:mt-2">
+            <p className="text-[10px] sm:text-sm text-gray-500">Size: {item.packageSize}</p>
+            <p className="text-[10px] sm:text-sm text-gray-500">Qty: {item.quantity}</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3 mt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
           <OrderStatusBadge 
             status={item.status} 
             icon={getStatusIcon(item.status)} 
           />
-          {item.status === "cancelled" && (
-            <p className="text-sm text-red-500 italic">
-              {item.cancellationReason}
-            </p>
-          )}
+          
+          <div className="flex gap-2">
+            {item.status === "processing" && (
+              <CancellationDialog
+                onCancel={onCancel}
+                cancelReason={cancelReason}
+                setCancelReason={setCancelReason}
+                item={item}
+              />
+            )}
+            {item.status === "shipped" && (
+              <CancellationDialog
+                onCancel={onCancel}
+                cancelReason={cancelReason}
+                setCancelReason={setCancelReason}
+                item={item}
+              />
+            )}
+            {item.status === "delivered" && (
+              <ReturnDialog
+                onReturn={onReturn}
+                returnReason={returnReason}
+                setReturnReason={setReturnReason}
+                item={item}
+              />
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-2 min-w-[100px]">
-        {item.status === "processing" && (
-          <CancellationDialog
-            onCancel={onCancel}
-            cancelReason={cancelReason}
-            setCancelReason={setCancelReason}
-            item={item}
-          />
-        )}
-        {item.status === "shipped" && (
-          <CancellationDialog
-            onCancel={onCancel}
-            cancelReason={cancelReason}
-            setCancelReason={setCancelReason}
-            item={item}
-          />
-        )}
-        {item.status === "delivered" && (
-          <ReturnDialog
-            onReturn={onReturn}
-            returnReason={returnReason}
-            setReturnReason={setReturnReason}
-            item={item}
-          />
+        {item.status === "cancelled" && (
+          <p className="text-[10px] sm:text-xs text-red-500 italic mt-2 line-clamp-1 bg-red-50 p-1 px-2 rounded">
+            Reason: {item.cancellationReason}
+          </p>
         )}
       </div>
     </div>
@@ -282,8 +288,8 @@ export default function OrderView() {
   const handleCancel = async (itemId) => {
     if (!cancelReason.trim()) {
       toast({
-        title: "Error",
-        description: "Please provide a reason for cancellation",
+        title: MESSAGES.ERROR,
+        description: MESSAGES.PLEASE_PROVIDE_A_REASON_FOR_CANCELLATION,
         variant: "destructive",
       });
       return;
@@ -297,13 +303,13 @@ export default function OrderView() {
       })).unwrap();
       
       toast({
-        title: "Success",
-        description: "Item has been cancelled successfully",
+        title: MESSAGES.SUCCESS,
+        description: MESSAGES.ITEM_HAS_BEEN_CANCELLED_SUCCESSFULLY,
       });
       setCancelReason("");
     } catch (error) {
       toast({
-        title: "Error",
+        title: MESSAGES.ERROR,
         description: error.message || "Failed to cancel item",
         variant: "destructive",
       });
@@ -374,7 +380,7 @@ export default function OrderView() {
       total: `${(item.price * item.quantity).toFixed(2)}`,
     }));
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 80,
       head: [tableColumn.map((col) => col.header)],
       body: tableRows.map((row) => [row.item, row.price, row.qty, row.total]),
@@ -475,8 +481,8 @@ export default function OrderView() {
   const handleReturn = async (itemId) => {
     if (!returnReason.trim()) {
       toast({
-        title: "Error",
-        description: "Please provide a reason for return",
+        title: MESSAGES.ERROR,
+        description: MESSAGES.PLEASE_PROVIDE_A_REASON_FOR_RETURN,
         variant: "destructive",
       });
       return;
@@ -490,13 +496,13 @@ export default function OrderView() {
       })).unwrap();
       
       toast({
-        title: "Success",
-        description: "Item has been return requsted successfully",
+        title: MESSAGES.SUCCESS,
+        description: MESSAGES.ITEM_HAS_BEEN_RETURN_REQUSTED_SUCCESSFULLY,
       });
       setReturnReason("");
     } catch (error) {
       toast({
-        title: "Error",
+        title: MESSAGES.ERROR,
         description: error.message || "Failed to return item",
         variant: "destructive",
       });
@@ -519,7 +525,7 @@ export default function OrderView() {
 
       if (!res) {
         toast({
-          title: 'Razorpay SDK failed to load',
+          title: MESSAGES.RAZORPAY_SDK_FAILED_TO_LOAD,
           variant: 'destructive',
         });
         return;
@@ -552,14 +558,14 @@ export default function OrderView() {
 
             setPaymentSuccess(true);
             toast({
-              title: 'Payment successful',
+              title: MESSAGES.PAYMENT_SUCCESSFUL,
               description: `Order ID: ${data.orderId}`,
             });
             dispatch(fetchOrderById(id)); 
           } catch (error) {
             console.error("Error verifying payment:", error);
             toast({
-              title: 'Payment verification failed',
+              title: MESSAGES.PAYMENT_VERIFICATION_FAILED,
               description: error.response?.data?.message || 'Please contact support',
               variant: 'destructive',
             });
@@ -574,14 +580,14 @@ export default function OrderView() {
                 withCredentials: true
               });
               toast({
-                title: 'Payment cancelled',
-                description: 'Your payment was cancelled. Please try again.',
+                title: MESSAGES.PAYMENT_CANCELLED,
+                description: MESSAGES.YOUR_PAYMENT_WAS_CANCELLED_PLEASE_TRY_AGAIN,
                 variant: 'destructive',
               });
             } catch (error) {
               console.error("Error handling payment failure:", error);
               toast({
-                title: 'Error handling payment failure',
+                title: MESSAGES.ERROR_HANDLING_PAYMENT_FAILURE,
                 description: error.message || 'Please contact support',
                 variant: 'destructive',
               });
@@ -606,7 +612,7 @@ export default function OrderView() {
     } catch (error) {
       console.error("Error initiating Razorpay payment:", error);
       toast({
-        title: 'Error initiating payment',
+        title: MESSAGES.ERROR_INITIATING_PAYMENT,
         description: error.message || 'Please try again',
         variant: 'destructive',
       });
@@ -674,10 +680,10 @@ export default function OrderView() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:my-8 max-w-7xl">
-      <Card>
-        <CardHeader className="border-b">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="container mx-auto px-4 lg:p-0 py-4 lg:py-3 lg:my-8 max-w-[1400px]">
+      <Card className="shadow-none px-2 border-none bg-transparent">
+        <CardHeader className="border-b px-0 pt-2 lg:pt-0 sm:px-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl">
                 Order <span className="text-[#92c949]">#{order.orderId}</span>
@@ -687,21 +693,28 @@ export default function OrderView() {
                 {new Date(order.createdAt).toLocaleTimeString()}
               </p>
             </div>
-            {order.status === 'failed' ? (
-                <Button 
-                  variant="outline" 
-                  onClick={handleRepay}
-                >
-                  Repay
-                </Button>
-              ) : (<OrderStatusBadge 
-                status={order.status} 
-                icon={<Package className="h-4 w-4" />} 
-              />)}
+            <div className="flex flex-col items-start sm:items-end gap-2">
+              {order.status === 'failed' ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRepay}
+                    className="rounded-xl"
+                  >
+                    Repay
+                  </Button>
+                ) : (
+                <div className="flex sm:justify-end w-full sm:w-auto">
+                  <OrderStatusBadge 
+                    status={order.status} 
+                    icon={<Package className="h-4 w-4" />} 
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-0 sm:px-6">
           <div className="mt-6 space-y-4">
             {order.items.map((item) => (
               <OrderItem
@@ -753,11 +766,11 @@ export default function OrderView() {
           </div>
         </CardContent>
 
-        <CardFooter className="border-t pb-5 flex items-center justify-between">
-          <p className="text-sm text-gray-600 pt-4">
+        <CardFooter className="border-t pb-5 flex flex-col sm:flex-row items-center justify-between px-0 sm:px-6">
+          <p className="text-xs sm:text-sm text-gray-500 pt-4 text-center sm:text-left">
             Thank you for shopping with us! We appreciate your business.
           </p>
-          <Button variant="outline" className="mt-4" onClick={() => downloadInvoice()}> Invoice <Download/></Button>
+          <Button variant="outline" className="mt-4 w-full sm:w-auto rounded-xl" onClick={() => downloadInvoice()}> Invoice <Download className="ml-2 h-4 w-4"/></Button>
         </CardFooter>
       </Card>
     </div>

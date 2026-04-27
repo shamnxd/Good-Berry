@@ -63,13 +63,8 @@ const OrdersPage = () => {
   }, [searchTerm, statusFilter, loadOrders]);
 
   return (
-    <div className="space-y-4 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-4">
+    <div className="space-y-4 py-2 px-3 lg:p-0">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-4 lg:mb-10">
             <Input
               type="text"
               placeholder="Search by Order ID"
@@ -91,8 +86,6 @@ const OrdersPage = () => {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {orders.map((order) => (
@@ -137,7 +130,7 @@ const OrdersPage = () => {
       )}
 
       {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-4">
+        <div className="flex justify-end items-center space-x-2 !py-4">
           <Button
             variant="outline"
             size="sm"

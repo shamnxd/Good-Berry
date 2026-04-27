@@ -6,7 +6,7 @@ const BallScaleMultiple = () => {
       <div></div>
       <div></div>
       <div></div>
-      <style jsx>{`
+      <style>{`
         .ball-scale-multiple {
           position: absolute;
           left: 50%;
@@ -56,7 +56,7 @@ export function Component() {
   return (
     <div className="wrapper">
       <BallScaleMultiple />
-      <style jsx>{`
+      <style>{`
         .wrapper {
           position: relative;
           width: 100%;

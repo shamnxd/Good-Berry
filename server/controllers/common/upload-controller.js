@@ -1,5 +1,8 @@
 const cloudinary = require('cloudinary').v2;
 const { Readable } = require('stream');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const uploadToCloudinary = (buffer) => {
   return new Promise((resolve, reject) => {
@@ -27,20 +30,20 @@ const uploadToCloudinary = (buffer) => {
 const uploadImage = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.NO_FILE_UPLOADED });
     }
 
     const result = await uploadToCloudinary(req.file.buffer);
 
-    res.status(200).json({
-      message: 'File uploaded successfully',
+    res.status(HTTP_STATUS.OK).json({
+      message: MESSAGES.FILE_UPLOADED_SUCCESSFULLY,
       url: result.secure_url,
       public_id: result.public_id,
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({
-      message: 'Error uploading file',
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: MESSAGES.ERROR_UPLOADING_FILE,
       error: error.message,
     });
   }

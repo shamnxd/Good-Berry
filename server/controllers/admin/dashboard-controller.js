@@ -3,6 +3,10 @@ const User = require('../../models/User');
 const Product = require('../../models/Product');
 const Category = require('../../models/Categorys');
 const Variant = require('../../models/Variant');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
+
 
 const dashboardController = {
   getDashboardData: async (req, res) => {
@@ -180,7 +184,7 @@ const dashboardController = {
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      res.status(500).json({ error: 'Failed to fetch dashboard data' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.FAILED_TO_FETCH_DASHBOARD_DATA });
     }
   }
 };

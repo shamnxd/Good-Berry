@@ -5,6 +5,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CommonForm from "@/components/common/form";
 import { resetPasswordFormControls } from "@/config";
 import { resetPassword } from "@/store/auth-slice";
+import MESSAGES from '../../constants/messages';
+
 
 const initialState = {
   password: "",
@@ -24,7 +26,7 @@ function ResetPassword() {
   useEffect(() => {
     if (!token) {
       toast({
-        title: "Invalid or missing token",
+        title: MESSAGES.INVALID_OR_MISSING_TOKEN,
         variant: "destructive",
       });
       navigate("/auth/login");
@@ -36,7 +38,7 @@ function ResetPassword() {
 
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Passwords do not match",
+        title: MESSAGES.PASSWORDS_DO_NOT_MATCH,
         variant: "destructive",
       });
       return;
@@ -58,7 +60,7 @@ function ResetPassword() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6" style={{ maxWidth: "310px" }}>
+    <div className="mx-auto w-full max-w-[350px] px-2 space-y-6">
       <p className="text-sm text-muted-foreground">Please enter your new password below.</p>
       <CommonForm
         formControls={resetPasswordFormControls}
