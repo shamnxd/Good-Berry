@@ -3,6 +3,9 @@ const Variant = require('../../models/Variant');
 const Product = require('../../models/Product')
 const Wallet = require('../../models/Wallet');
 const User = require('../../models/User');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const orderController = {
   getAllOrders: async (req, res) => {
@@ -48,8 +51,8 @@ const orderController = {
         totalOrders: total
       });
     } catch (error) {
-      res.status(500).json({
-        message: 'Error fetching orders',
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        message: MESSAGES.ERROR_FETCHING_ORDERS,
         error: error.message
       });
     }
@@ -61,13 +64,13 @@ const orderController = {
         .populate('addressId');
 
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       res.json(order);
     } catch (error) {
-      res.status(500).json({
-        message: 'Error fetching order details',
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        message: MESSAGES.ERROR_FETCHING_ORDER_DETAILS,
         error: error.message
       });
     }
@@ -85,7 +88,7 @@ const orderController = {
         .populate('couponId');
 
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       const itemIndex = order.items.findIndex(
@@ -93,7 +96,7 @@ const orderController = {
       );
 
       if (itemIndex === -1) {
-        return res.status(404).json({ message: 'Order item not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_ITEM_NOT_FOUND });
       }
 
       order.items[itemIndex].status = status;
@@ -210,12 +213,12 @@ const orderController = {
       await order.save();
 
       res.json({
-        message: 'Order item status updated successfully',
+        message: MESSAGES.ORDER_ITEM_STATUS_UPDATED_SUCCESSFULLY,
         order,
       });
     } catch (error) {
       console.error('Error updating order item status:', error);
-      res.status(500).json({ message: 'Error updating order item status' });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_UPDATING_ORDER_ITEM_STATUS });
     }
   },
 
@@ -230,7 +233,7 @@ const orderController = {
         .populate('couponId');
 
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       const itemIndex = order.items.findIndex(
@@ -238,14 +241,14 @@ const orderController = {
       );
 
       if (itemIndex === -1) {
-        return res.status(404).json({ message: 'Order item not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_ITEM_NOT_FOUND });
       }
 
       const item = order.items[itemIndex];
 
       if (!item.returnRequest) {
-        return res.status(400).json({
-          message: 'No return request found for this item',
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          message: MESSAGES.NO_RETURN_REQUEST_FOUND_FOR_THIS_ITEM,
         });
       }
 
@@ -326,13 +329,13 @@ const orderController = {
       await order.save();
 
       res.json({
-        message: 'Return request approved and refund processed successfully',
+        message: MESSAGES.RETURN_REQUEST_APPROVED_AND_REFUND_PROCESSED_SUCCESSFULLY,
         order,
         refundAmount,
       });
     } catch (error) {
-      res.status(500).json({
-        message: 'Error approving return request',
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        message: MESSAGES.ERROR_APPROVING_RETURN_REQUEST,
         error: error.message,
       });
     }
@@ -349,7 +352,7 @@ const orderController = {
         .populate('items.productId');
 
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_NOT_FOUND });
       }
 
       const itemIndex = order.items.findIndex(
@@ -357,14 +360,14 @@ const orderController = {
       );
 
       if (itemIndex === -1) {
-        return res.status(404).json({ message: 'Order item not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ORDER_ITEM_NOT_FOUND });
       }
 
       const item = order.items[itemIndex];
 
       if (!item.returnRequest) {
-        return res.status(400).json({
-          message: 'No return request found for this item'
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          message: MESSAGES.NO_RETURN_REQUEST_FOUND_FOR_THIS_ITEM
         });
       }
 
@@ -375,8 +378,8 @@ const orderController = {
 
       res.json(order);
     } catch (error) {
-      res.status(500).json({
-        message: 'Error rejecting return request',
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        message: MESSAGES.ERROR_REJECTING_RETURN_REQUEST,
         error: error.message
       });
     }
