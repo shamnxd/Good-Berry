@@ -1,27 +1,29 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const api = `${import.meta.env.VITE_API_BASE}/api/admin`;
+
+
 
 export const fetchCoupons = createAsyncThunk('coupons/fetchCoupons', async ({ page, search }) => {
-  const response = await axios.get(`${api}/coupons?page=${page}&search=${search}`, { withCredentials: true });
+  const response = await api.get(`${API_ENDPOINTS.ADMIN.COUPONS}?page=${page}&search=${search}`, { withCredentials: true });
   return response.data;
 });
 
 export const addCoupon = createAsyncThunk('coupons/addCoupon', async (couponData, { dispatch }) => {
-  const response = await axios.post(`${api}/coupons`, couponData, { withCredentials: true });
+  const response = await api.post(API_ENDPOINTS.ADMIN.COUPONS, couponData, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return response.data;
 });
 
 export const updateCoupon = createAsyncThunk('coupons/updateCoupon', async ({ id, couponData }, { dispatch }) => {
-  const response = await axios.put(`${api}/coupons/${id}`, couponData, { withCredentials: true });
+  const response = await api.put(API_ENDPOINTS.ADMIN.COUPON(id), couponData, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return response.data;
 });
 
 export const deleteCoupon = createAsyncThunk('coupons/deleteCoupon', async (id, { dispatch }) => {
-  await axios.delete(`${api}/coupons/${id}`, { withCredentials: true });
+  await api.delete(API_ENDPOINTS.ADMIN.COUPON(id), { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
   return id;
 });
