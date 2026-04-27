@@ -7,6 +7,8 @@ import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
+import MESSAGES from '../../constants/messages';
+
 
 const initialState = {
   username: "",
@@ -26,8 +28,8 @@ function AuthRegister() {
     event.preventDefault();
     if(formData.email.trim() === "" && formData.password.trim() === "" && formData.username.trim() === ""){ 
       toast({
-        title: "Required",
-        description: "Please fill in all the required fields, name, email and password",
+        title: MESSAGES.REQUIRED,
+        description: MESSAGES.PLEASE_FILL_IN_ALL_THE_REQUIRED_FIELDS_NAME_EMAIL_AND_PASSWORD,
         variant: "destructive",
       });
       return
@@ -35,8 +37,8 @@ function AuthRegister() {
 
     if (formData.username.trim() === "") {
       toast({
-        title: "Missing Username",
-        description: "Please enter your name.",
+        title: MESSAGES.MISSING_USERNAME,
+        description: MESSAGES.PLEASE_ENTER_YOUR_NAME,
         variant: "destructive",
       });
       return;
@@ -44,8 +46,8 @@ function AuthRegister() {
   
     if (formData.email.trim() === "") {
       toast({
-        title: "Missing Email",
-        description: "Please enter a valid email address.",
+        title: MESSAGES.MISSING_EMAIL,
+        description: MESSAGES.PLEASE_ENTER_A_VALID_EMAIL_ADDRESS,
         variant: "destructive",
       });
       return;
@@ -53,8 +55,8 @@ function AuthRegister() {
   
     if (formData.password.trim() === "") {
       toast({
-        title: "Missing Password",
-        description: "Password is required.",
+        title: MESSAGES.MISSING_PASSWORD,
+        description: MESSAGES.PASSWORD_IS_REQUIRED,
         variant: "destructive",
       });
       return;
@@ -62,8 +64,8 @@ function AuthRegister() {
   
     if (formData.password.length < 8) {
       toast({
-        title: "Weak Password",
-        description: "Password must be at least 8 characters long.",
+        title: MESSAGES.WEAK_PASSWORD,
+        description: MESSAGES.PASSWORD_MUST_BE_AT_LEAST_8_CHARACTERS_LONG,
         variant: "destructive",
       });
       return;
@@ -88,7 +90,7 @@ function AuthRegister() {
 };
 
   return (
-    <div className="mx-auto w-full space-y-6" style={{ maxWidth: "310px" }}>
+    <div className="mx-auto w-full max-w-[350px] px-2 space-y-6">
       <div className="text-center">
         <Button className="w-full mb-4 bg-transparent hover:bg-transparent text-black  outline outline-1 outline-gray-200" onClick={handleGoogleSignUp}>
           <FcGoogle
