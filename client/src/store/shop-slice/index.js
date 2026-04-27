@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
 const initialState = {
     products: [],
@@ -15,13 +16,13 @@ const initialState = {
     error : null
 };
 
-const api = `${import.meta.env.VITE_API_BASE}/api`;
+
 
 export const featuredProducts = createAsyncThunk(
     "shop/featuredProducts",
     async (_, thunkAPI) => {
         try {
-            const response = await axios.get(`${api}/featured`);
+            const response = await api.get(`${API_ENDPOINTS.COMMON.FEATURED}`);
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -34,8 +35,8 @@ export const getProducts = createAsyncThunk(
     "shop/getProducts",
     async ({ page, limit, sort = 'featured', search = '', minPrice = 0, maxPrice = 100000, categories = ''}) => {
       try {
-        const response = await axios.get(
-          `${api}/products?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}`
+        const response = await api.get(
+          `${API_ENDPOINTS.COMMON.PRODUCTS}?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}`
         );
         return response.data;
       } catch (error) {
@@ -47,7 +48,7 @@ export const getProducts = createAsyncThunk(
 export const getSingleProduct = createAsyncThunk(
     "shop/getSingleProduct",
     async (id) => {
-      const response = await axios.get(`${api}/products/${id}`);
+      const response = await api.get(`${API_ENDPOINTS.COMMON.PRODUCT(id)}`);
       return response.data;
     }
 )
@@ -56,7 +57,7 @@ export const getWishlist = createAsyncThunk(
     "wishlist/getWishlist",
     async (_, thunkAPI) => {
         try {
-            const response = await axios.get(`${api}/user/wishlist`, { withCredentials: true });
+            const response = await api.get(`${API_ENDPOINTS.USER.WISHLIST}`, { withCredentials: true });
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -68,7 +69,7 @@ export const addToWishlist = createAsyncThunk(
     "wishlist/addToWishlist",
     async ({productId, variantId}, thunkAPI) => {
         try {
-            const response = await axios.post(`${api}/user/wishlist`, { productId, variantId }, { withCredentials: true });
+            const response = await api.post(`${API_ENDPOINTS.USER.WISHLIST}`, { productId, variantId }, { withCredentials: true });
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -80,7 +81,7 @@ export const removeFromWishlist = createAsyncThunk(
     "wishlist/removeFromWishlist",
     async ({ productId, variantId }, thunkAPI) => {
         try {
-            const response = await axios.delete(`${api}/user/wishlist/${productId}/${variantId}`, { withCredentials: true });
+            const response = await api.delete(`${API_ENDPOINTS.USER.WISHLIST_ITEM(productId, variantId)}`, { withCredentials: true });
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue({ error: error.message });
@@ -91,7 +92,7 @@ export const removeFromWishlist = createAsyncThunk(
 export const getCategories = createAsyncThunk(
     "shop/getCategories",
     async () => {
-      const response = await axios.get(`${api}/categories`, { withCredentials: true });
+      const response = await api.get(`${API_ENDPOINTS.COMMON.CATEGORIES}`, { withCredentials: true });
       return response.data;
     }
   );
@@ -100,7 +101,7 @@ export const applyCoupon = createAsyncThunk(
   "shop/applyCoupon",
   async ({ code, total }, thunkAPI) => {
     try {
-      const response = await axios.post(`${api}/user/apply-coupon`, { code, total }, { withCredentials: true });
+      const response = await api.post(`${API_ENDPOINTS.USER.APPLY_COUPON}`, { code, total }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
@@ -112,7 +113,7 @@ export const checkCoupon = createAsyncThunk(
   "shop/checkCoupon",
   async ({ code, total }, thunkAPI) => {
     try {
-      const response = await axios.post(`${api}/user/check-coupon`, { code, total }, { withCredentials: true });
+      const response = await api.post(`${API_ENDPOINTS.USER.CHECK_COUPON}`, { code, total }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue({ error: error.message });
