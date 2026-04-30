@@ -3,7 +3,7 @@ import { Phone, Mailbox, MapPin, Clock, Instagram, Facebook, Twitter } from 'luc
 
 export default function ContactPage() {
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12 space-y-16 mt-10">
+    <div className="container mx-auto max-w-[1400px] px-4 py-12 space-y-16 mt-10">
       {/* Header Section */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-[#90c846]">Get in Touch</h1>

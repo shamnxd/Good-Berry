@@ -3,7 +3,9 @@ import * as Slider from '@radix-ui/react-slider'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import MESSAGES from '../../constants/messages';
 import {
+
   Sheet,
   SheetContent,
   SheetHeader,
@@ -11,8 +13,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useDispatch, useSelector } from 'react-redux'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { getCategories } from '@/store/shop-slice'
+import { useToast } from '@/hooks/use-toast'
 
 
 const flavors = [
@@ -51,14 +54,6 @@ export function PriceFilter({ value, onValueChange, onFilter }) {
         <span className="text-sm text-gray-600">
           Price: ₹{value[0]} — ₹{value[1]}
         </span>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="rounded-sm px-6 hover:bg-[#8CC63F] hover:text-white"
-          onClick={onFilter}
-        >
-          FILTER
-        </Button>
       </div>
     </div>
   )
@@ -100,10 +95,11 @@ export function CategoryFilter({ selectedCategories, onCategoryChange }) {
 }
 
 export function FlavorFilter({ selectedFlavors, onFlavorChange }) {
+  const { toast } = useToast();
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">FILTER BY FLAVOR</h3>
-      <div className="space-y-3">
+      <div className="space-y-3" onClick={() => toast({ title: MESSAGES.UNDER_DEVELOPMENT, description: MESSAGES.THIS_FILTER_IS_UNDER_DEVELOPMENT })}>
         {flavors.map((flavor) => (
           <button
             key={flavor.id}
@@ -117,13 +113,13 @@ export function FlavorFilter({ selectedFlavors, onFlavorChange }) {
               />
               <span className="text-gray-600 group-hover:text-gray-900">{flavor.name}</span>
             </div>
-            <span className={`text-sm ${
+            {/* <span className={`text-sm ${
               selectedFlavors.includes(flavor.id) 
                 ? 'bg-[#8CC63F] text-white' 
                 : 'bg-gray-100 text-gray-600'
             } px-2 py-0.5 rounded-full`}>
               {flavor.count}
-            </span>
+            </span> */}
           </button>
         ))}
       </div>
@@ -132,14 +128,16 @@ export function FlavorFilter({ selectedFlavors, onFlavorChange }) {
 }
 
 export function StatusFilter({ selectedStatuses, onStatusChange }) {
+  const { toast } = useToast();
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">PRODUCT STATUS</h3>
       <div className="space-y-3">
         {statuses.map((status) => (
-          <div key={status.id} className="flex items-center space-x-2">
+          <div key={status.id} className="flex items-center space-x-2" onClick={() => toast({ title: MESSAGES.UNDER_DEVELOPMENT, description: MESSAGES.THIS_FILTER_IS_UNDER_DEVELOPMENT })}>
             <Checkbox
               id={status.id}
+              disabled
               checked={selectedStatuses.includes(status.id)}
               onCheckedChange={() => onStatusChange(status.id)}
               className="border-gray-300 text-[#8CC63F] focus:ring-[#8CC63F]"
@@ -166,17 +164,19 @@ export function MobileFilters({
   setSelectedFlavors,
   selectedStatuses,
   setSelectedStatuses,
-  handlePriceFilter,
+  handleApplyFilters,
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="lg:hidden">
           <SlidersHorizontal className="h-4 w-4" />
           <span className="sr-only">Filters</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto pb-10">
         <SheetHeader>
           <SheetTitle>Filters</SheetTitle>
         </SheetHeader>
@@ -184,15 +184,18 @@ export function MobileFilters({
           <PriceFilter
             value={priceRange}
             onValueChange={setPriceRange}
-            onFilter={handlePriceFilter}
+            onFilter={() => {
+              handleApplyFilters();
+              setOpen(false);
+            }}
           />
           <CategoryFilter
             selectedCategories={selectedCategories}
             onCategoryChange={(categoryId) => {
               setSelectedCategories(prev =>
                 prev.includes(categoryId)
-                  ? prev.filter(id => id !== categoryId)
-                  : [...prev, categoryId]
+                   ? prev.filter(id => id !== categoryId)
+                   : [...prev, categoryId]
               )
             }}
           />
@@ -201,8 +204,8 @@ export function MobileFilters({
             onFlavorChange={(flavorId) => {
               setSelectedFlavors(prev =>
                 prev.includes(flavorId)
-                  ? prev.filter(id => id !== flavorId)
-                  : [...prev, flavorId]
+                   ? prev.filter(id => id !== flavorId)
+                   : [...prev, flavorId]
               )
             }}
           />
@@ -211,14 +214,27 @@ export function MobileFilters({
             onStatusChange={(statusId) => {
               setSelectedStatuses(prev =>
                 prev.includes(statusId)
-                  ? prev.filter(id => id !== statusId)
-                  : [...prev, statusId]
+                   ? prev.filter(id => id !== statusId)
+                   : [...prev, statusId]
               )
             }}
           />
+
+          <div className="pt-6">
+            <Button 
+                className="w-full bg-[#8CC63F] hover:bg-[#7AB32F] text-white font-medium py-6 rounded-xl"
+                onClick={() => {
+                  handleApplyFilters();
+                  setOpen(false);
+                }}
+              >
+                APPLY FILTERS
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
   )
 }
+
 

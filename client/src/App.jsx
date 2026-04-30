@@ -17,6 +17,14 @@ import ProductPage from "./pages/shop/Product/product-page";
 import ForgetPassword from "./pages/auth/forget-password";
 import VeryOtp from "./pages/auth/verify-otp";
 import Account from "./pages/user";
+import OrdersPage from "./pages/user/orders";
+import WishlistPage from "./pages/user/wishlist";
+import PasswordPage from "./pages/user/password";
+import AddressPage from "./pages/user/address";
+import AccountDetailPage from "./pages/user/account-detail"; 
+import WalletPage from "./pages/user/wallet";
+import AccountOverview from "./pages/user/account-overview";
+import ReferAndEarn from "./pages/user/reffer";
 import { fetchCart, syncCartAfterLogin } from "./store/shop-slice/cart-slice";
 import ShoppingCart from "./pages/shop/cart/shopping-cart";
 import OrderView from "./pages/shop/cart/view-order";
@@ -110,8 +118,16 @@ function App() {
               </CheckAuth>
             }
           >
-            <Route index element={<Account />} />
-            <Route path="order" element={<Account />} />
+            <Route element={<Account />}>
+              <Route index element={<AccountOverview />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="wishlist" element={<WishlistPage />} />
+              <Route path="details" element={<AccountDetailPage />} />
+              <Route path="address" element={<AddressPage />} />
+              <Route path="password" element={<PasswordPage />} />
+              <Route path="wallet" element={<WalletPage />} />
+              <Route path="refer" element={<ReferAndEarn />} />
+            </Route>
             <Route path="order/:id" element={<OrderView />} />
           </Route>
 

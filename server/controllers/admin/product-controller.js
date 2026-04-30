@@ -3,17 +3,20 @@ const Product = require('../../models/Product');
 const Category = require('../../models/Categorys');
 const Cart = require('../../models/Cart');
 const { default: mongoose } = require('mongoose');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 // Add product handler
 const addProduct = async (req, res) => {
   const { name, description, isFeatured, category, variants } = req.body;
   try {
     if (!name || !description || !category) {
-      return res.json({ message: "Name, description, and category are required." });
+      return res.json({ message: MESSAGES.NAME_DESCRIPTION_AND_CATEGORY_ARE_REQUIRED });
     }
 
     if (!variants || !Array.isArray(variants) || variants.length === 0) {
-      return res.json({ message: "At least one variant is required." });
+      return res.json({ message: MESSAGES.AT_LEAST_ONE_VARIANT_IS_REQUIRED });
     }
 
     const newProduct = new Product({ name, description, isFeatured, category });
@@ -34,15 +37,15 @@ const addProduct = async (req, res) => {
       })
     );
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.CREATED).json({
       success: true,
-      message: "Product and variants added successfully",
+      message: MESSAGES.PRODUCT_AND_VARIANTS_ADDED_SUCCESSFULLY,
       product: savedProduct,
       variants: savedVariants,
     });
   } catch (error) {
     console.error("Error adding product and variants:", error);
-    res.status(500).json({ message: "Failed to add product and variants", error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_ADD_PRODUCT_AND_VARIANTS, error: error.message });
   }
 };
 
@@ -85,18 +88,18 @@ const getAllProducts = async (req, res) => {
       })
     );
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: "Products fetched successfully",
+      message: MESSAGES.PRODUCTS_FETCHED_SUCCESSFULLY,
       products: productsWithDetails,
       totalPages: Math.ceil(totalProducts / limit),
       currentPage: parseInt(page),
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Failed to fetch products",
+      message: MESSAGES.FAILED_TO_FETCH_PRODUCTS,
       error: error.message,
     });
   }
@@ -109,22 +112,22 @@ const getProduct = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
     const variants = await Variant.find({ productId: productId });
 
     res.json({
       success: true,
-      message: 'Product fetched successfully',
+      message: MESSAGES.PRODUCT_FETCHED_SUCCESSFULLY,
       product,
       variants,
     });
   } catch (error) {
     console.error("Error fetching product:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Failed to fetch product',
+      message: MESSAGES.FAILED_TO_FETCH_PRODUCT,
       error: error.message,
     });
   }
@@ -142,15 +145,15 @@ const updateProduct = async (req, res) => {
 
   try {
     if (!name || !description || !category) {
-      return res.status(400).json({ message: "Name, description, and category are required." });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.NAME_DESCRIPTION_AND_CATEGORY_ARE_REQUIRED });
     }
 
     if (!variants || !Array.isArray(variants) || variants.length === 0) {
-      return res.status(400).json({ message: "At least one variant is required." });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AT_LEAST_ONE_VARIANT_IS_REQUIRED });
     }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid product id" });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.INVALID_PRODUCT_ID });
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -160,7 +163,7 @@ const updateProduct = async (req, res) => {
     );
 
     if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
     await Variant.deleteMany({ productId: id });
@@ -200,13 +203,13 @@ const updateProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Product and variants updated successfully",
+      message: MESSAGES.PRODUCT_AND_VARIANTS_UPDATED_SUCCESSFULLY,
       product: updatedProduct,
       variants: updatedVariants,
     });
   } catch (error) {
     console.error("Error updating product and variants:", error);
-    res.status(500).json({ message: "Failed to update product and variants", error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_UPDATE_PRODUCT_AND_VARIANTS, error: error.message });
   }
 };
 
@@ -216,7 +219,7 @@ const unListProduct = async (req, res) => {
     const productId = req.params.id;
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
 
@@ -224,10 +227,10 @@ const unListProduct = async (req, res) => {
     console.log(list);
 
     const data = await Product.findByIdAndUpdate(productId, { unListed: list });
-    res.status(200).json({ success: true, message: "Product unlisted successfully", productId, data });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PRODUCT_UNLISTED_SUCCESSFULLY, productId, data });
   } catch (error) {
     console.error("Error unlisting product:", error);
-    res.status(500).json({ success: false, message: "Failed to unlist product", error: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.FAILED_TO_UNLIST_PRODUCT, error: error.message });
   }
 }
 

@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const Address = require('../../models/Address');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const addressController = {
     getAllAddresses: async (req, res) => {
@@ -7,7 +10,7 @@ const addressController = {
             const addresses = await Address.find({ userId: req.user.id });
             res.json(addresses);
         } catch (error) {
-            res.status(500).json({ error: 'Error fetching addresses' });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_FETCHING_ADDRESSES });
         }
     },
 
@@ -37,11 +40,11 @@ const addressController = {
 
             const savedAddress = await newAddress.save();
 
-            res.status(201).json(savedAddress);
+            res.status(HTTP_STATUS.CREATED).json(savedAddress);
 
         } catch (error) {
             console.log(error);
-            res.status(500).json({ error: 'Error adding address' });   
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGES.ERROR_ADDING_ADDRESS });   
         }
     },
 
@@ -58,11 +61,11 @@ const addressController = {
                 { new: true }
             );
             if (!updatedAddress) {
-                return res.status(404).json({ message: 'Address not found' });
+                return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ADDRESS_NOT_FOUND });
             }
             res.json(updatedAddress);
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     },
 
@@ -86,7 +89,7 @@ const addressController = {
     
             res.json(updatedAddress);
         } catch (error) {
-            res.status(400).json({ message: error.message });
+            res.status(HTTP_STATUS.BAD_REQUEST).json({ message: error.message });
         }
     },    
 
@@ -98,12 +101,12 @@ const addressController = {
                 userId: req.user.id
             });
             if (!deletedAddress) {
-                return res.status(404).json({ message: 'Address not found' });
+                return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.ADDRESS_NOT_FOUND });
             }
         
-            res.json({ message: 'Address deleted successfully' });
+            res.json({ message: MESSAGES.ADDRESS_DELETED_SUCCESSFULLY });
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     },
 }

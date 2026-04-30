@@ -39,7 +39,6 @@ export default function RelatedProducts({products, id}) {
   const handleProductClick = async (id) => {
     try {
       navigate(`/shop/product/${id}`);
-      window.location.reload();
       await dispatch(getSingleProduct(id));
     } catch (error) {
       console.error("Error loading product:", error);
@@ -49,7 +48,7 @@ export default function RelatedProducts({products, id}) {
   return (
     <section className="w-full lg:py-12 mt-8">
       <div className="container lg:px-0 px-4 overflow-hidden">
-        <h2 className="text-2xl font-medium mb-12">Related products</h2>
+        <h2 className="text-xl md:text-2xl font-medium mb-6 md:mb-12">Related products</h2>
         
         <div className="relative mx-[-1rem] md:mx-[-1.5rem]">
           <div 
@@ -64,7 +63,7 @@ export default function RelatedProducts({products, id}) {
             {products && products.map((product) => (
               <Card 
                 key={product._id} 
-                className="border-none shadow-none flex-none w-[280px] snap-start text-center"
+                className="border-none shadow-none flex-none w-[180px] md:w-[280px] snap-start text-center"
                 onClick={() => handleProductClick(product._id)}
               >
                 <CardContent className="p-0">

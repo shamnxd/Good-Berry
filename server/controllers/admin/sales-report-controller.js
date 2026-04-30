@@ -1,5 +1,8 @@
 const Order = require('../../models/Order');
 const { subDays, subWeeks, subMonths, subYears, startOfDay, endOfDay } = require('date-fns');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const salesReportController = {
   generateSalesReport: async (req, res) => {
@@ -39,7 +42,7 @@ const salesReportController = {
           end = endOfDay(new Date(endDate));
           break;
         default:
-          return res.status(400).json({ message: 'Invalid period' });
+          return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.INVALID_PERIOD });
       }
 
       const query = {
@@ -95,7 +98,7 @@ const salesReportController = {
       res.json(report);
     } catch (error) {
       console.error('Error generating sales report:', error);
-      res.status(500).json({ message: 'Error generating sales report', error: error.message });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.ERROR_GENERATING_SALES_REPORT, error: error.message });
     }
   }
 };

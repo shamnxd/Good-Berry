@@ -1,7 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const api = `${import.meta.env.VITE_API_BASE}/api/user`;
+
+
 
 const cartStorage = {
   load: () => {
@@ -39,7 +41,7 @@ export const syncCartAfterLogin = createAsyncThunk(
     }
 
     try {
-      const response = await axios.post(`${api}/cart/sync`, localCart, {
+      const response = await api.post(API_ENDPOINTS.USER.CART_SYNC, localCart, {
         withCredentials: true,
       });
 
@@ -63,7 +65,7 @@ export const fetchCart = createAsyncThunk(
     }
 
     try {
-      const response = await axios.get(`${api}/cart`, {
+      const response = await api.get(API_ENDPOINTS.USER.CART, {
         withCredentials: true
       });
       return response.data;
@@ -105,7 +107,7 @@ export const addToCart = createAsyncThunk(
     }
 
     try {
-      const response = await axios.post(`${api}/cart`, itemToAdd, {
+      const response = await api.post(API_ENDPOINTS.USER.CART, itemToAdd, {
         withCredentials: true
       });
       return response.data;
@@ -118,7 +120,7 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItemQuantity = createAsyncThunk(
   'cart/updateQuantity',
-  async ({ itemId, quantity, packageSize, flavor }, { getState }) => {
+  async ({ itemId, quantity, packageSize, flavor }, { getState, rejectWithValue }) => {
     const { auth } = getState();
 
     if (!auth.user) {
@@ -135,7 +137,7 @@ export const updateCartItemQuantity = createAsyncThunk(
     }
 
     try {
-      const response = await axios.put(`${api}/cart/${itemId}`, {
+      const response = await api.put(API_ENDPOINTS.USER.CART_ITEM(itemId), {
         quantity,
         packageSize,
         flavor
@@ -145,7 +147,7 @@ export const updateCartItemQuantity = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error('Error updating cart quantity:', error);
-      throw error;
+      return rejectWithValue(error.response?.data?.error || 'Failed to update quantity');
     }
   }
 );
@@ -167,7 +169,7 @@ export const removeFromCart = createAsyncThunk(
     }
 
     try {
-      await axios.delete(`${api}/cart/${itemId}`, {
+      await api.delete(API_ENDPOINTS.USER.CART_ITEM(itemId), {
         data: { packageSize, flavor },
         withCredentials: true,
       });
@@ -181,17 +183,20 @@ export const removeFromCart = createAsyncThunk(
 
 export const checkQuantity = createAsyncThunk(
   'cart/checkQuantity',
-  async ({ productId, packageSize, flavor }) => {
+  async (input) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/api/check-quantity`, 
-        { productId, packageSize, flavor }, 
+      const isBulk = Array.isArray(input);
+      const payload = isBulk ? { items: input } : input;
+      
+      const response = await api.post(`${API_ENDPOINTS.CHECK_QUANTITY.BASE}`, 
+        payload, 
         { withCredentials: true }
       );
+      
       return {
-        productId,
-        packageSize,
-        flavor,
-        ...response.data
+        isBulk,
+        data: response.data,
+        originalInput: input
       };
     } catch (error) {
       console.error('Error checking quantity:', error);
@@ -205,7 +210,7 @@ export const getCoupons = createAsyncThunk(
   'cart/getCoupons',
   async () => {
     try {
-      const response = await axios.get(`${api}/coupons`, {
+      const response = await api.get(API_ENDPOINTS.ADMIN.COUPONS, {
         withCredentials: true
       });
       return response.data;
@@ -286,12 +291,28 @@ const cartSlice = createSlice({
         state.error = null;
       })
       .addCase(checkQuantity.fulfilled, (state, action) => {
-        const { productId, packageSize, flavor, quantity, availableQuantity, currentCartQuantity } = action.payload;
-        state.availableQuantities[`${productId}-${packageSize}-${flavor}`] = {
-          total: quantity,
-          available: availableQuantity,
-          inCart: currentCartQuantity
-        };
+        const { isBulk, data } = action.payload;
+        
+        if (isBulk) {
+          data.forEach(result => {
+            if (!result.error) {
+              const { productId, packageSize, flavor, quantity, availableQuantity, currentCartQuantity } = result;
+              state.availableQuantities[`${productId}-${packageSize}-${flavor}`] = {
+                total: quantity,
+                available: availableQuantity,
+                inCart: currentCartQuantity
+              };
+            }
+          });
+        } else {
+          const { productId, packageSize, flavor, quantity, availableQuantity, currentCartQuantity } = data;
+          state.availableQuantities[`${productId}-${packageSize}-${flavor}`] = {
+            total: quantity,
+            available: availableQuantity,
+            inCart: currentCartQuantity
+          };
+        }
+        
         state.quantityLoading = false;
         state.error = null;
       })

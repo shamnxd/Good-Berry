@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const api = `${import.meta.env.VITE_API_BASE}/api/user`;
+
+
 
 export const fetchWallet = createAsyncThunk(
   'wallet/fetchWallet',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/wallet`, { withCredentials: true });
+      const response = await api.get(API_ENDPOINTS.USER.WALLET, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -15,11 +17,23 @@ export const fetchWallet = createAsyncThunk(
   }
 );
 
-export const addMoneyToWallet = createAsyncThunk(
-  'wallet/addMoneyToWallet',
-  async ({ amount, description }, { rejectWithValue }) => {
+export const createWalletRazorpayOrder = createAsyncThunk(
+  'wallet/createWalletRazorpayOrder',
+  async ({ amount }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${api}/wallet/add-money`, { amount, description }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.USER.WALLET_CREATE_RAZORPAY_ORDER, { amount }, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const verifyWalletPayment = createAsyncThunk(
+  'wallet/verifyWalletPayment',
+  async ({ razorpayPaymentId, razorpayOrderId, razorpaySignature, amount, description }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.USER.WALLET_VERIFY_PAYMENT, { razorpayPaymentId, razorpayOrderId, razorpaySignature, amount, description }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -31,7 +45,7 @@ export const fetchTransactions = createAsyncThunk(
   'wallet/fetchTransactions',
   async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${api}/wallet/transactions?page=${page}&limit=${limit}`, { withCredentials: true });
+      const response = await api.get(`${API_ENDPOINTS.USER.WALLET_TRANSACTIONS}?page=${page}&limit=${limit}`, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -64,15 +78,14 @@ const walletSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(addMoneyToWallet.pending, (state) => {
+      .addCase(verifyWalletPayment.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(addMoneyToWallet.fulfilled, (state, action) => {
+      .addCase(verifyWalletPayment.fulfilled, (state, action) => {
         state.isLoading = false;
         state.balance = action.payload.balance;
-        state.transactions = action.payload.transactions;
       })
-      .addCase(addMoneyToWallet.rejected, (state, action) => {
+      .addCase(verifyWalletPayment.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })

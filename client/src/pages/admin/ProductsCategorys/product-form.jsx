@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Select,
   SelectContent,
   SelectItem,
@@ -177,7 +179,7 @@ export default function ProductForm() {
       variants[variantIndex].images.length >= 4
     ) {
       toast({
-        title: "You can only upload maximum 4 images",
+        title: MESSAGES.YOU_CAN_ONLY_UPLOAD_MAXIMUM_4_IMAGES,
         variant: "destructive",
       });
       return;
@@ -208,7 +210,7 @@ export default function ProductForm() {
 
       if (!data.payload || !data.payload.url) {
         toast({
-          title: "Failed to upload image. Please try again.",
+          title: MESSAGES.FAILED_TO_UPLOAD_IMAGE_PLEASE_TRY_AGAIN,
           variant: "destructive",
         });
         return;
@@ -236,7 +238,7 @@ export default function ProductForm() {
     } catch (error) {
       console.error("Error handling cropped image:", error);
       toast({
-        title: "Failed to process image. Please try again.",
+        title: MESSAGES.FAILED_TO_PROCESS_IMAGE_PLEASE_TRY_AGAIN,
         variant: "destructive",
       });
     }
@@ -286,7 +288,7 @@ export default function ProductForm() {
 
         if (quantity < 0) {
           toast({
-            title: "Quantity should be greater than 0",
+            title: MESSAGES.QUANTITY_SHOULD_BE_GREATER_THAN_0,
             variant: "destructive",
           });
           return;
@@ -294,7 +296,7 @@ export default function ProductForm() {
 
         if (price < 0) {
           toast({
-            title: "Price should be greater than 0",
+            title: MESSAGES.PRICE_SHOULD_BE_GREATER_THAN_0,
             variant: "destructive",
           });
           return;
@@ -342,7 +344,7 @@ export default function ProductForm() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "An error occurred",
+        title: MESSAGES.AN_ERROR_OCCURRED,
         variant: "destructive",
       });
     }

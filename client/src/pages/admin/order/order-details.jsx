@@ -65,21 +65,18 @@ function OrderDetails() {
     const statusOrder = ['processing', 'shipped', 'delivered'];
     
     if (newStatus === 'cancelled') {
-      return currentStatus !== 'delivered';
-    }
-    
-    if (currentStatus === 'cancelled') {
-      return false;
+      return true
     }
     
     if (currentStatus === 'delivered') {
       return false;
     }
-    
-    const currentIndex = statusOrder.indexOf(currentStatus);
-    const newIndex = statusOrder.indexOf(newStatus);
-    
-    return Math.abs(newIndex - currentIndex) <= 1;
+  
+    if (currentStatus === 'processing' && newStatus === 'delivered') {
+      return true;
+    }
+  
+    return statusOrder.indexOf(newStatus) > statusOrder.indexOf(currentStatus);
   }
 
   if (isLoading) return <div className="flex items-center justify-center h-screen">Loading order details...</div>;
@@ -221,6 +218,29 @@ function OrderDetails() {
             </div>
           )}
         </CardContent>
+    <CardHeader>
+      <CardTitle className="text-lg">Order Summary</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <p className="text-sm text-gray-500">Total Amount</p>
+          <p className="text-lg font-bold">₹{orderDetails?.subtotal?.toFixed(2)}</p>
+        </div>
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <p className="text-sm text-gray-500">Discount</p>
+          <p className="text-lg font-bold">₹{orderDetails?.discount?.toFixed(2)}</p>
+        </div>
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <p className="text-sm text-gray-500">Coupon</p>
+          <p className="text-lg font-bold">{orderDetails?.couponDiscount || 'None'}</p>
+        </div>
+        <div className="p-4 bg-gray-100 rounded-lg">
+          <p className="text-sm text-gray-500">Final Payable</p>
+          <p className="text-lg font-bold">₹{orderDetails?.total?.toFixed(2)}</p>
+        </div>
+      </div>
+    </CardContent>
       </Card>
 
       {/* Status update dialog */}
@@ -293,11 +313,6 @@ function OrderDetails() {
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Order total */}
-      <div className="mt-6 text-right">
-        <p className="text-2xl font-bold">Total: ₹{orderDetails?.total?.toFixed(2)}</p>
-      </div>
     </div>
   );
 }

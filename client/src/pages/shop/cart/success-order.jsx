@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export default function OrderSuccess({ data, isRepay, setPaymentSuccess }) {
   useEffect(() => {
@@ -47,169 +47,132 @@ export default function OrderSuccess({ data, isRepay, setPaymentSuccess }) {
   }, []);
 
   const downloadInvoice = () => {
-    const doc = new jsPDF();
+    try {
+      const doc = new jsPDF();
+      const leftMargin = 15;
+      const rightAlign = 190;
+      const topMargin = 20;
 
-    // Set initial coordinates
-    const leftMargin = 15;
-    const rightAlign = 190;
-    const topMargin = 20;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Good Berry", leftMargin, topMargin);
+      doc.setFontSize(9);
+      doc.text("Private Limited", leftMargin, topMargin + 4);
 
-    // Company name
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Good Berry", leftMargin, topMargin);
-    doc.setFontSize(9);
-    doc.text("Private Limited", leftMargin, topMargin + 4);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.text("Invoice", rightAlign - 50, topMargin);
 
-    // Invoice header
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.text("Invoice", rightAlign - 50, topMargin);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`Invoice#: ${data.orderId}`, rightAlign - 50, topMargin + 8);
+      doc.text(
+        `Date: ${new Date(data.createdAt).toLocaleDateString()}`,
+        rightAlign - 50,
+        topMargin + 13
+      );
 
-    // Invoice details
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Invoice#: ${data.orderId}`, rightAlign - 50, topMargin + 8);
-    doc.text(
-      `Date: ${new Date(data.createdAt).toLocaleDateString()}`,
-      rightAlign - 50,
-      topMargin + 13
-    );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Shipping Address:", leftMargin, topMargin + 28);
 
-    // Bill To section
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Shipping Address:", leftMargin, topMargin + 28);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(data.addressId?.name || "", leftMargin, topMargin + 34);
+      doc.text(data.addressId?.street || "", leftMargin, topMargin + 39);
+      doc.text(
+        `${data.addressId?.city || ""}, ${data.addressId?.state || ""}, ${data.addressId?.zip || ""}`,
+        leftMargin,
+        topMargin + 44
+      );
+      doc.text(data.addressId?.mobile || "", leftMargin, topMargin + 49);
 
-    // Customer details
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(
-      [
-        data.addressId.name,
-        data.addressId.street,
-        `${data.addressId.city}, ${data.addressId.state}, ${data.addressId.zip}`,
-        data.addressId.mobile,
-      ],
-      leftMargin,
-      topMargin + 34
-    );
+      const tableColumn = [
+        { header: "ITEM DESCRIPTION", dataKey: "item" },
+        { header: "PRICE", dataKey: "price" },
+        { header: "QTY", dataKey: "qty" },
+        { header: "TOTAL", dataKey: "total" },
+      ];
 
-    // Items table
-    const tableColumn = [
-      { header: "ITEM DESCRIPTION", dataKey: "item" },
-      { header: "PRICE", dataKey: "price" },
-      { header: "QTY", dataKey: "qty" },
-      { header: "TOTAL", dataKey: "total" },
-    ];
+      const tableRows = (data.items || []).map((item) => ({
+        item: item.name,
+        price: `${(item.price || 0).toFixed(2)}`,
+        qty: item.quantity,
+        total: `${((item.price || 0) * item.quantity).toFixed(2)}`,
+      }));
 
-    const tableRows = data.items.map((item) => ({
-      item: item.name,
-      price: `${item.price.toFixed(2)}`,
-      qty: item.quantity,
-      total: `${(item.price * item.quantity).toFixed(2)}`,
-    }));
+      autoTable(doc, {
+        startY: 80,
+        head: [tableColumn.map((col) => col.header)],
+        body: tableRows.map((row) => [row.item, row.price, row.qty, row.total]),
+        theme: "plain",
+        styles: { fontSize: 10, cellPadding: 5 },
+        columnStyles: {
+          0: { cellWidth: 70 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 40 },
+        },
+        headStyles: {
+          fillColor: false,
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+          lineWidth: 0.0,
+        },
+        didDrawCell: (cellData) => {
+          if (cellData.row.index === tableRows.length - 1) {
+            doc.line(
+              cellData.cell.x,
+              cellData.cell.y + cellData.cell.height,
+              cellData.cell.x + cellData.cell.width,
+              cellData.cell.y + cellData.cell.height
+            );
+          }
+        },
+      });
 
-    doc.autoTable({
-      startY: 80,
-      head: [tableColumn.map((col) => col.header)],
-      body: tableRows.map((row) => [row.item, row.price, row.qty, row.total]),
-      theme: "plain",
-      styles: {
-        fontSize: 10,
-        cellPadding: 5,
-      },
-      columnStyles: {
-        0: { cellWidth: 70 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 40 },
-      },
-      headStyles: {
-        fillColor: false,
-        textColor: [0, 0, 0],
-        fontStyle: "bold",
-        lineWidth: 0.0,
-      },
-      didDrawCell: (data) => {
-        // Add bottom border to last row
-        if (data.row.index === tableRows.length - 1) {
-          doc.line(
-            data.cell.x,
-            data.cell.y + data.cell.height,
-            data.cell.x + data.cell.width,
-            data.cell.y + data.cell.height
-          );
-        }
-      },
-    });
+      const finalY = doc.lastAutoTable.finalY || 120;
 
-    const finalY = doc.lastAutoTable.finalY || 120;
+      doc.setFont("helvetica", "normal");
+      doc.text("SUB TOTAL", rightAlign - 90, finalY + 15);
+      doc.text(`${(data.subtotal || 0).toFixed(2)}`, rightAlign - 20, finalY + 15, { align: "right" });
 
-    doc.setFont("helvetica", "normal");
-    doc.text("SUB TOTAL", rightAlign - 90, finalY + 15);
-    doc.text(`${data.subtotal.toFixed(2)}`, rightAlign - 20, finalY + 15, {
-      align: "right",
-    });
+      doc.text("Discount", rightAlign - 90, finalY + 22);
+      doc.text(`-${(data.discount || 0).toFixed(2)}`, rightAlign - 20, finalY + 22, { align: "right" });
 
-    doc.text("Discount", rightAlign - 90, finalY + 22);
-    doc.text(`-${data.discount.toFixed(2)}`, rightAlign - 20, finalY + 22, {
-      align: "right",
-    });
+      doc.text("Coupon Discount", rightAlign - 90, finalY + 28);
+      doc.text(`-${(data.couponDiscount || 0).toFixed(2)}`, rightAlign - 20, finalY + 28, { align: "right" });
 
-    doc.text("Coupon Discount", rightAlign - 90, finalY + 28);
-    doc.text(
-      `-${data.couponDiscount.toFixed(2)}`,
-      rightAlign - 20,
-      finalY + 28,
-      { align: "right" }
-    );
+      doc.setFont("helvetica", "bold");
+      doc.text("Grand Total", rightAlign - 90, finalY + 37);
+      doc.text(`${(data.total || 0).toFixed(2)}`, rightAlign - 20, finalY + 37, { align: "right" });
 
-    // Grand total with bold font
-    doc.setFont("helvetica", "bold");
-    doc.text("Grand Total", rightAlign - 90, finalY + 37);
-    doc.text(`${data.total.toFixed(2)}`, rightAlign - 20, finalY + 37, {
-      align: "right",
-    });
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Contact", leftMargin, finalY + 65);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("Goodberry Inc. Anytown, USA, 123 Main Street", leftMargin, finalY + 72);
+      doc.text("help@goodberry.com", leftMargin, finalY + 78);
+      doc.text("www.goodberry.com", leftMargin, finalY + 84);
 
-    // Contact section
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Contact", leftMargin, finalY + 65);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(
-      [
-        "Goodberry Inc. Anytown, USA, 123 Main Street",
-        "help@goodberry.com",
-        "www.goodberry.com",
-      ],
-      leftMargin,
-      finalY + 72
-    );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Thank you for choosing us!", leftMargin, finalY + 100);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("We appreciate your trust in us and hope you enjoy your purchase.", leftMargin, finalY + 106);
+      doc.text("If you have any questions, feel free to reach out to our support team.", leftMargin, finalY + 112);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Thank you for choosing us!", leftMargin, finalY + 100);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(
-      "We appreciate your trust in us and hope you enjoy your purchase.",
-      leftMargin,
-      finalY + 106
-    );
-    doc.text(
-      "If you have any questions, feel free to reach out to our support team.",
-      leftMargin,
-      finalY + 109
-    );
-
-    // Save the PDF
-    doc.save(`invoice-${data.orderId}.pdf`);
+      doc.save(`invoice-${data.orderId}.pdf`);
+    } catch (err) {
+      console.error("Failed to generate invoice:", err?.message || err);
+      alert(`Could not generate invoice: ${err?.message || 'Unknown error'}`);
+    }
   };
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-lg bg-white shadow-lg">
+    <div className="flex flex-col items-center justify-center mt-8 !p-0">
+      <Card className="w-full max-w-lg border-none !shadow-none">
         <CardContent className="pt-6">
           <div className="text-center">
             <div className="relative inline-block">

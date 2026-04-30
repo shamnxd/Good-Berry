@@ -1,14 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
-const BASE_URL = import.meta.env.VITE_API_BASE;
-const api = `${BASE_URL}/api/admin`;
 
 export const addCategoryOffer = createAsyncThunk(
   'offer/addCategoryOffer',
   async ({ categoryId, offerPercentage }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${api}/category/offer`, { categoryId, offerPercentage }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.ADMIN.CATEGORY_OFFER, { categoryId, offerPercentage }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -20,7 +19,7 @@ export const removeCategoryOffer = createAsyncThunk(
   'offer/removeCategoryOffer',
   async ({ categoryId }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${api}/category/offer/remove`, { categoryId }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.ADMIN.CATEGORY_OFFER_REMOVE, { categoryId }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -32,7 +31,7 @@ export const addProductOffer = createAsyncThunk(
   'offer/addProductOffer',
   async ({ productId, offerPercentage }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${api}/products/${productId}/offer`, { offerPercentage }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.ADMIN.PRODUCT_OFFER(productId), { offerPercentage }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -44,7 +43,7 @@ export const removeProductOffer = createAsyncThunk(
   'offer/removeProductOffer',
   async ({ productId }, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${api}/products/${productId}/offer`, { withCredentials: true });
+      const response = await api.delete(API_ENDPOINTS.ADMIN.PRODUCT_OFFER(productId), { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

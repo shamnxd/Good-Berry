@@ -14,8 +14,8 @@ export default function Breadcrumbs() {
   const pathnames = location.pathname.split("/").filter((x) => x );
 
   return (
-    <div className="border-b bg-gray-100 py-6 lg:px-7 px-4">
-      <div className="container mx-auto p-4">
+    <div className="border-b bg-gray-100 py-3 lg:py-6 lg:px-7 px-2">
+      <div className="container mx-auto p-4 !max-w-[1400px]">
         <nav className="flex justify-between" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">
             {/* Root breadcrumb */}

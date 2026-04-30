@@ -3,10 +3,10 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
-  secure: false, // true for port 465, false for other ports
+  secure: false, 
   auth: {
-    user: "",
-    pass: "",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -37,7 +37,7 @@ const SendVerificationCode = async (email, code) => {
         </div>`;
 
         const response = await transporter.sendMail({
-            from: '"Good Berry" <shamnadthayyil8@gmail.com>',
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: "Verify your account",
             html: htmlTemplate,
@@ -71,7 +71,7 @@ const SendWelcomeMessage = async (email) => {
         </div>`;
 
         const response = await transporter.sendMail({
-            from: '"Good Berry" <shamnadthayyil8@gmail.com>',
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: "Welcome to Good Berry",
             html: htmlTemplate,
@@ -102,7 +102,7 @@ const SendResetPasswordLink = async (email, resetLink) => {
         </div>`;
 
         const response = await transporter.sendMail({
-            from: '"Good Berry" <shamnadthayyil8@gmail.com>',
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: "Reset Password",
             html: htmlTemplate,

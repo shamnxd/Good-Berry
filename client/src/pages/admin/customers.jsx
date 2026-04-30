@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import MESSAGES from '../../constants/messages';
 import {
+
   Table,
   TableBody,
   TableCell,
@@ -79,7 +81,7 @@ export default function CustomersPage() {
           });
         })
         .catch(() => {
-          toast({ title: "Something went wrong", variant: "destructive" });
+          toast({ title: MESSAGES.SOMETHING_WENT_WRONG, variant: "destructive" });
         });
       setSelectedUser(null);
     }
@@ -143,7 +145,17 @@ export default function CustomersPage() {
                     <TableCell>
                       {new Date(customer.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>{customer.orders || "NILL"}</TableCell>
+                    <TableCell>
+                    <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          customer.orderCount
+                            ? "bg-green-50 text-green-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {customer.orderCount ? customer.orderCount : "0"}
+                      </span>
+                      </TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${

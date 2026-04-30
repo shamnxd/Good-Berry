@@ -10,7 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
-import axios from "axios";
+import api from "@/api";
+import { API_ENDPOINTS } from "@/api/endpoints";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -51,7 +52,7 @@ export default function SalesReportPage() {
   const fetchReport = async () => {
     const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
     const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE}/api/admin/sales-report`, {
+    const response = await api.get(API_ENDPOINTS.ADMIN.SALES_REPORT, {
       params: { period, startDate, endDate, page: currentPage, limit: ordersPerPage, search: filterText },
       withCredentials: true
     });
@@ -111,8 +112,8 @@ export default function SalesReportPage() {
       // Fetch all data without pagination
       const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
       const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE}/api/admin/sales-report`,
+      const response = await api.get(
+        API_ENDPOINTS.ADMIN.SALES_REPORT,
         {
           params: {
             period,
@@ -201,8 +202,8 @@ export default function SalesReportPage() {
       // Fetch all data without pagination
       const startDate = dateRange?.from ? formatDate(dateRange.from) : undefined;
       const endDate = dateRange?.to ? formatDate(dateRange.to) : undefined;
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE}/api/admin/sales-report`,
+      const response = await api.get(
+        API_ENDPOINTS.ADMIN.SALES_REPORT,
         {
           params: {
             period,

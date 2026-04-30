@@ -55,6 +55,9 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    refreshTokens: [{
+        type: String,
+    }],
 
 });
 

@@ -2,15 +2,18 @@ const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
 const mongoose = require('mongoose');
 const Category = require('../../models/Categorys');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 const getProductDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Invalid product ID'
+        error: MESSAGES.INVALID_PRODUCT_ID
       });
     }
 
@@ -20,9 +23,9 @@ const getProductDetails = async (req, res) => {
     }).populate('category', 'name');
 
     if (!product) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: 'Product not found'
+        message: MESSAGES.PRODUCT_NOT_FOUND
       });
     }
 
@@ -70,10 +73,10 @@ const getProductDetails = async (req, res) => {
       { $limit: 5 },
     ]);
 
-    res.status(200).json({ variantsFormatted, product, recommendedProducts });
+    res.status(HTTP_STATUS.OK).json({ variantsFormatted, product, recommendedProducts });
 
   } catch (error) {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: error.message
     });
@@ -263,9 +266,9 @@ const getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Server Error",
+      message: MESSAGES.SERVER_ERROR,
       error: error.message
     });
   }
@@ -309,13 +312,13 @@ const getCategories = async (req, res) => {
       }
     ]);
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       success: true,
       data: categories
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: error.message
     });

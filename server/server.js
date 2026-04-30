@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
     cors({
-        origin: 'https://www.goodberry.store',
+        origin: process.env.CLIENT_URL || 'https://www.goodberry.store',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         allowedHeaders: [
             'Content-Type',

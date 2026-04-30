@@ -1,6 +1,9 @@
 const Wishlist = require('../../models/Wishlist');
 const Product = require('../../models/Product');
 const Variant = require('../../models/Variant');
+const HTTP_STATUS = require('../../constants/statusCodes');
+const MESSAGES = require('../../constants/messages');
+
 
 exports.getWishlist = async (req, res) => {
     try {
@@ -8,28 +11,35 @@ exports.getWishlist = async (req, res) => {
             .populate('products.productId')
             .populate('products.variantId');
 
+        if (!wishlist) {
+            return res.status(HTTP_STATUS.OK).json({ success: true, data: [] });
+        }
+
         const wishlistItems = wishlist.products
-            .filter(item => !item.productId.unListed) 
+            .filter(item => item.productId && !item.productId.unListed && item.variantId) 
             .map(item => {
                 const variant = item.variantId;
-                const firstPackSize = variant.packSizePricing[0];
+                const firstPackSize = variant.packSizePricing && variant.packSizePricing.length > 0 ? variant.packSizePricing[0] : null;
+                
+                if (!firstPackSize) return null;
+
                 const stockStatus = firstPackSize.quantity > 0 ? (firstPackSize.quantity < 20 ? `Limited Stock (${firstPackSize.quantity})` : "IN STOCK") : "OUT OF STOCK";
 
                 return {
                     productId: item.productId._id,
                     name: item.productId.name,
                     description: item.productId.description,
-                    image: variant.images[0],
+                    image: variant.images && variant.images.length > 0 ? variant.images[0] : null,
                     salePrice: firstPackSize.salePrice,
                     price: firstPackSize.price,
                     stockStatus,
                     variantId: variant._id
                 };
-            });
+            }).filter(item => item !== null);
 
-        res.status(200).json({ success: true, data: wishlistItems });
+        res.status(HTTP_STATUS.OK).json({ success: true, data: wishlistItems });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, error: error.message });
     }
 };
 
@@ -41,7 +51,7 @@ exports.addToWishlist = async (req, res) => {
         const variant = await Variant.findById(variantId);
 
         if (!product || !variant) {
-            return res.status(404).json({ success: false, message: "Product or variant not found" });
+            return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_OR_VARIANT_NOT_FOUND });
         }
 
         let wishlist = await Wishlist.findOne({ userId: req.user.id });
@@ -58,9 +68,9 @@ exports.addToWishlist = async (req, res) => {
         }
 
         await wishlist.save();
-        res.status(200).json({ success: true, data: wishlist });
+        res.status(HTTP_STATUS.OK).json({ success: true, data: wishlist });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, error: error.message });
     }
 };
 
@@ -74,8 +84,8 @@ exports.removeFromWishlist = async (req, res) => {
             await wishlist.save();
         }
 
-        res.status(200).json({ success: true, data: wishlist });
+        res.status(HTTP_STATUS.OK).json({ success: true, data: wishlist });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, error: error.message });
     }
 };

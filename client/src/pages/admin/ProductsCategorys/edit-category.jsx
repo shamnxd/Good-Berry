@@ -1,5 +1,7 @@
 import { useState } from "react";
+import MESSAGES from '../../../constants/messages';
 import {
+
   Dialog,
   DialogContent,
   DialogDescription,
@@ -67,7 +69,7 @@ const EditCategoryModal = ({ category, onClose }) => {
     
     if (!data.payload || !data.payload.url) {
       toast({
-        title: "Failed to upload image. Please try again.",
+        title: MESSAGES.FAILED_TO_UPLOAD_IMAGE_PLEASE_TRY_AGAIN,
         variant: "destructive",
       });
       return;

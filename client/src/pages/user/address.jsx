@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, X } from 'lucide-react'
+import { Plus, Pencil, Trash } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import MESSAGES from '../../constants/messages';
+
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Street address is required'),
@@ -107,7 +109,7 @@ export default function ShippingAddress() {
           setIsEditing(null)
           setShowForm(false)
           toast({
-            title: 'Address updated successfully',
+            title: MESSAGES.ADDRESS_UPDATED_SUCCESSFULLY,
           })
         })
     } else {
@@ -116,7 +118,7 @@ export default function ShippingAddress() {
         .then(() => {
           setShowForm(false)
           toast({
-            title: 'Address added successfully',
+            title: MESSAGES.ADDRESS_ADDED_SUCCESSFULLY,
           })
         })
     }
@@ -130,7 +132,7 @@ export default function ShippingAddress() {
   const handleDelete = (id) => {
     dispatch(deleteAddress(id)).then(() => {
       toast({
-        title: 'Address deleted successfully',
+        title: MESSAGES.ADDRESS_DELETED_SUCCESSFULLY,
       })
     })
   }
@@ -140,27 +142,28 @@ export default function ShippingAddress() {
   }
 
   return (
-    <div className="w-full space-y-6 p-5">
-      <Card className="lg:px-6 px-4">
+    <div className="w-full space-y-6 px-3 mt-4 lg:mt-0 lg:px-0">
+      <Card className="px-0 lg:px-4 !shadow-none !border-none">
+        {!showForm && (
         <CardHeader className="px-0 flex-row justify-between items-center">
-          <h2 className="text-lg font-medium">Shipping Address</h2>
-          {!showForm && (
             <Button 
-              variant="ghost" 
+              variant="default" 
               size="icon" 
-              className="text-primary hover:text-primary-foreground"
+              className="text-white hover:text-primary-foreground w-[150px]"
               onClick={() => {
                 setShowForm(true)
                 setIsEditing(null)
               }}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-5 w-5 text-white" />
+              Add Address
             </Button>
-          )}
+       
         </CardHeader>
+        )}
         <CardContent className="px-0">
           {showForm ? (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-[600px] mt-6">
               <div>
                 <Label className="text-gray-600">Street Address</Label>
                 <Input 
@@ -276,15 +279,15 @@ export default function ShippingAddress() {
                 setSelectedAddress(value)
                 dispatch(setDefault(value)).then(() => {
                   toast({
-                    title: 'Default address updated successfully',
+                    title: MESSAGES.DEFAULT_ADDRESS_UPDATED_SUCCESSFULLY,
                   })
                 })
               }} 
               className="space-y-4"
             >
               {addresses.map((address) => (
-                <Card key={address._id} className="bg-gray-50 border-0">
-                  <CardContent className="flex items-center justify-between p-4">
+                <Card key={address._id} className="bg-gray-50 border-0 max-w-[600px]">
+                  <CardContent className="flex items-center justify-between p-3 lg:py-0">
                     <div className="flex items-center gap-3">
                       <RadioGroupItem 
                         value={address._id} 
@@ -302,20 +305,20 @@ export default function ShippingAddress() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col justify-center items-center">
                       <Button 
                         variant="ghost" 
                         size="icon"
                         onClick={() => handleEdit(address)}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-5 w-5 !font-bold" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon"
                         onClick={() => handleDelete(address._id)}
                       >
-                        <X className="h-4 w-4" />
+                        <Trash className="h-5 w-5 text-red-500 !font-bold" />
                       </Button>
                     </div>
                   </CardContent>

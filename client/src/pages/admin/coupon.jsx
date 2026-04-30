@@ -10,7 +10,9 @@ import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import MESSAGES from '../../constants/messages';
 import {
+
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,14 +44,14 @@ export default function CouponManagement() {
         console.error("Error adding coupon:", response);
         if (response.payload) {
           toast({
-            title: "Success",
-            description: "Coupon added successfully"
+            title: MESSAGES.SUCCESS,
+            description: MESSAGES.COUPON_ADDED_SUCCESSFULLY
           });
           setIsDialogOpen(false);
         } else {
           toast({
-            title: "Error",
-            description: "Coupon code already exists",
+            title: MESSAGES.ERROR,
+            description: MESSAGES.COUPON_CODE_ALREADY_EXISTS,
             variant: "destructive"
           });
         }
@@ -57,7 +59,7 @@ export default function CouponManagement() {
       .catch((error) => {
         console.error("Error adding coupon: err", error);
         toast({ 
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: error.message,
           variant: "destructive"
         });
@@ -69,22 +71,22 @@ export default function CouponManagement() {
       .then((response) => {
         if (response.payload) {
           toast({
-            title: "Success",
-            description: "Coupon updated successfully",
+            title: MESSAGES.SUCCESS,
+            description: MESSAGES.COUPON_UPDATED_SUCCESSFULLY,
           });
           setIsDialogOpen(false);
           setEditingCoupon(null);
         } else {
           toast({
-            title: "Error",
-            description: "Coupon code already exists",
+            title: MESSAGES.ERROR,
+            description: MESSAGES.COUPON_CODE_ALREADY_EXISTS,
             variant: "destructive"
           });
         }
       })
       .catch((error) => {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: error.message,
           variant: "destructive"
         });
@@ -95,15 +97,15 @@ export default function CouponManagement() {
     dispatch(deleteCoupon(id))
       .then(() => {
         toast({
-          title: "Success",
-          description: "Coupon deleted successfully"
+          title: MESSAGES.SUCCESS,
+          description: MESSAGES.COUPON_DELETED_SUCCESSFULLY
         });
         setIsRemoveDialogOpen(false);
         setSelectedCoupon(null);
       })
       .catch((error) => {
         toast({
-          title: "Error",
+          title: MESSAGES.ERROR,
           description: error.message,
           variant: "destructive"
         });
@@ -360,7 +362,7 @@ function CouponForm({ onSubmit, initialData }) {
             step="0.01" 
             {...register("discount", { 
               required: "Discount amount is required",
-              min: { value: 0, message: "Discount must be positive" }
+              min: { value: 0, message: MESSAGES.DISCOUNT_MUST_BE_POSITIVE }
             })} 
             className="mt-1" 
           />
@@ -414,7 +416,7 @@ function CouponForm({ onSubmit, initialData }) {
             type="number" 
             {...register("usageLimit", { 
               required: "Usage limit is required",
-              min: { value: 1, message: "Usage limit must be at least 1" }
+              min: { value: 1, message: MESSAGES.USAGE_LIMIT_MUST_BE_AT_LEAST_1 }
             })} 
             className="mt-1" 
           />
@@ -428,7 +430,7 @@ function CouponForm({ onSubmit, initialData }) {
             step="0.01" 
             {...register("minimumAmount", { 
               required: "Minimum amount is required",
-              min: { value: 0, message: "Minimum amount cannot be negative" }
+              min: { value: 0, message: MESSAGES.MINIMUM_AMOUNT_CANNOT_BE_NEGATIVE }
             })} 
             className="mt-1" 
           />
