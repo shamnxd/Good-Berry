@@ -60,7 +60,7 @@ function ShoppingHome() {
             <p className="text-gray-600 text-sm">There are many variations of passages of lorem ipsum available</p>
           </div>
           <div className="featured-products-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 mx-auto max-w-[1100px]">
-            {featuredProds.map((product, i) => (
+            {featuredProds?.map((product, i) => (
               <FeaturedProductCard
                 key={i}
                 product={product}

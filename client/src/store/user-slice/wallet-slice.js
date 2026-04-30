@@ -31,9 +31,9 @@ export const createWalletRazorpayOrder = createAsyncThunk(
 
 export const verifyWalletPayment = createAsyncThunk(
   'wallet/verifyWalletPayment',
-  async ({ razorpayPaymentId, razorpayOrderId, razorpaySignature, amount, description }, { rejectWithValue }) => {
+  async ({ razorpayPaymentId, razorpayOrderId, razorpaySignature, amount }, { rejectWithValue }) => {
     try {
-      const response = await api.post(API_ENDPOINTS.USER.WALLET_VERIFY_PAYMENT, { razorpayPaymentId, razorpayOrderId, razorpaySignature, amount, description }, { withCredentials: true });
+      const response = await api.post(API_ENDPOINTS.USER.WALLET_VERIFY_PAYMENT, { razorpayPaymentId, razorpayOrderId, razorpaySignature, amount }, { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

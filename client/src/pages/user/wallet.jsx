@@ -38,9 +38,8 @@ const WalletPage = () => {
 
   const onSubmit = async (data) => {
     const amount = parseFloat(data.amount);
-    const description = data.description;
 
-    if (amount > 1000) {
+    if (amount > 10000) {
       return toast({
         title: MESSAGES.AMOUNT_EXEED,
         description: MESSAGES.CANT_ADD_MORE_THAN_1000_PLEASE_TRY_AGAIN,
@@ -82,7 +81,6 @@ const WalletPage = () => {
               razorpayOrderId: response.razorpay_order_id,
               razorpaySignature: response.razorpay_signature,
               amount,
-              description
             })).unwrap();
 
             toast({
@@ -91,6 +89,7 @@ const WalletPage = () => {
             });
             setIsDialogOpen(false);
             reset();
+            dispatch(fetchWallet());
             dispatch(fetchTransactions({ page: 1 }));
           } catch (error) {
             toast({
@@ -139,7 +138,7 @@ const WalletPage = () => {
             <DialogTrigger asChild>
               <Button>Add Money</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px] w-[92vw] !p-6 rounded-xl">
               <DialogHeader>
                 <DialogTitle>Add Money to Wallet</DialogTitle>
               </DialogHeader>
@@ -150,7 +149,7 @@ const WalletPage = () => {
                   type="number"
                   onChange={handleAmountChange}
                 />
-                <Input {...register("description")} placeholder="Description" />
+
                 <Button type="submit" disabled={isLoading}>
                   Add Money
                 </Button>
