@@ -6,7 +6,7 @@ const MESSAGES = Object.freeze({
   AMOUNT_EXEED: 'Amount exeed',
   AMOUNT_MUST_BE_GREATER_THAN_0: 'Amount must be greater than 0.',
   AN_ERROR_OCCURRED: 'An error occurred',
-  CANT_ADD_MORE_THAN_1000_PLEASE_TRY_AGAIN: 'Cant add more than 1000. please try again.',
+  CANT_ADD_MORE_THAN_1000_PLEASE_TRY_AGAIN: 'Cant add more than 10000. please try again.',
   CART_TOTAL_AFTER_DISCOUNT_IS_BELOW_THE_MINIMUM_REQUIRED_AMOUNT: 'Cart total after discount is below the minimum required amount.',
   CART_UPDATED: 'Cart Updated',
   COUPON_ADDED_SUCCESSFULLY: 'Coupon added successfully',
