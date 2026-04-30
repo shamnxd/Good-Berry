@@ -35,7 +35,8 @@ const walletController = {
         return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.WALLET_NOT_FOUND });
       }
 
-      const transactions = wallet.transactions.slice((page - 1) * limit, page * limit);
+      const reversedTransactions = [...wallet.transactions].reverse();
+      const transactions = reversedTransactions.slice((page - 1) * limit, page * limit);
       const totalTransactions = wallet.transactions.length;
 
       res.json({
@@ -89,7 +90,7 @@ const walletController = {
       const options = {
         amount: Math.round(amount * 100),
         currency: "INR",
-        receipt: `wallet_topup_${req.user.id}_${Date.now()}`,
+        receipt: `wlt_${req.user.id.toString().slice(-10)}_${Date.now()}`,
       };
 
       const razorpayOrder = await razorpay.orders.create(options);
@@ -110,8 +111,7 @@ const walletController = {
         razorpayPaymentId,
         razorpayOrderId,
         razorpaySignature,
-        amount,
-        description
+        amount
       } = req.body;
 
       const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
@@ -132,7 +132,7 @@ const walletController = {
       wallet.transactions.push({
         type: 'credit',
         amount: parsedAmount,
-        description: description || 'Wallet Top-up',
+        description: 'Wallet Top-up',
         razorpayPaymentId
       });
 
