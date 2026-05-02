@@ -21,8 +21,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/GoodBerry
-            git fetch origin main
-            git reset --hard origin/main
+            git pull origin main
             
             # Backend update
             cd server
