@@ -27,14 +27,7 @@ const generateTokens = (user) => {
     return { accessToken, refreshToken };
 };
 
-const setTokenCookies = (res, accessToken, refreshToken) => {
-    res.cookie("token", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 15 * 60 * 1000, // 15 mins
-    });
-
+const setTokenCookies = (res, refreshToken) => {
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -42,6 +35,7 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 };
+
 
 const register = async (req, res) => {
     const { username, email, password } = req.body;
@@ -146,10 +140,11 @@ const login = async (req, res) => {
         checkUser.refreshTokens.push(refreshToken);
         await checkUser.save();
 
-        setTokenCookies(res, accessToken, refreshToken);
+        setTokenCookies(res, refreshToken);
         res.status(HTTP_STATUS.OK).json({
             success: true,
             message: MESSAGES.LOGGED_IN_SUCCESSFULLY,
+            accessToken,
             user: {
                 email: checkUser.email,
                 role: checkUser.role,
@@ -167,62 +162,29 @@ const login = async (req, res) => {
 
 
 const authMiddleware = async (req, res, next) => {
-    const token = req.cookies.token;
-    const refreshToken = req.cookies.refreshToken;
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token && !refreshToken)
-        return res.json({
+    if (!token) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
             success: false,
             message: MESSAGES.PLEASE_LOGIN_FIRST,
         });
-
-    try {
-        if (token) {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || "This the thing i love");
-            req.user = decoded;
-            const user = await User.findById(decoded.id);
-            if (!user || user.isBlocked) {
-                res.clearCookie("token");
-                res.clearCookie("refreshToken");
-                return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.USER_IS_BLOCKED_OR_DELETED });
-            }
-            return next();
-        }
-    } catch (e) {
-        if (e.name !== "TokenExpiredError" && e.message !== "jwt expired") {
-            return res.json({ success: false, message: MESSAGES.INVALID_TOKEN });
-        }
-    }
-
-    if (!refreshToken) {
-        return res.json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
     }
 
     try {
-        const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || "This the refresh thing i love");
-        const user = await User.findById(decodedRefresh.id);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "This the thing i love");
+        req.user = decoded;
+        const user = await User.findById(decoded.id);
         
-        // Ensure user exists, is not blocked, and token exists in DB
-        if (!user || user.isBlocked || !user.refreshTokens.includes(refreshToken)) {
-            res.clearCookie("token");
+        if (!user || user.isBlocked) {
             res.clearCookie("refreshToken");
-            return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.INVALID_OR_REVOKED_REFRESH_TOKEN });
+            return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.USER_IS_BLOCKED_OR_DELETED });
         }
-
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(user);
         
-        // Refresh Token Rotation
-        user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
-        user.refreshTokens.push(newRefreshToken);
-        await user.save();
-
-        setTokenCookies(res, newAccessToken, newRefreshToken);
-
-        req.user = jwt.decode(newAccessToken);
-        next();
-
+        return next();
     } catch (e) {
-        return res.json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.INVALID_TOKEN });
     }
 };
 
@@ -242,7 +204,7 @@ const googleAuth = async (req, res) => {
         user.refreshTokens.push(refreshToken);
         await user.save();
 
-        setTokenCookies(res, accessToken, refreshToken);
+        setTokenCookies(res, refreshToken);
 
         return res.redirect('${process.env.CLIENT_URL}?login=success');
 
@@ -285,12 +247,12 @@ const verify = async (req, res) => {
     await user.save();
 
     // Set cookie and redirect in one response
-    setTokenCookies(res, accessToken, refreshToken);
+    setTokenCookies(res, refreshToken);
 
     SendWelcomeMessage(user.email);
 
 
-    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.LOGGED_IN_SUCCESSFULLY, user });
+    res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.LOGGED_IN_SUCCESSFULLY, accessToken, user });
 };
 
 const logout = async (req, res) => {
@@ -309,7 +271,6 @@ const logout = async (req, res) => {
         }
     }
 
-    res.clearCookie("token");
     res.clearCookie("refreshToken");
     res.json({
         success: true,
@@ -492,7 +453,6 @@ const refreshToken = async (req, res) => {
         const user = await User.findById(decoded.id);
 
         if (!user || user.isBlocked || !user.refreshTokens.includes(refreshToken)) {
-            res.clearCookie("token");
             res.clearCookie("refreshToken");
             return res.status(HTTP_STATUS.FORBIDDEN).json({ success: false, message: MESSAGES.INVALID_OR_REVOKED_REFRESH_TOKEN });
         }
@@ -503,10 +463,11 @@ const refreshToken = async (req, res) => {
         user.refreshTokens.push(newRefreshToken);
         await user.save();
 
-        setTokenCookies(res, accessToken, newRefreshToken);
+        setTokenCookies(res, newRefreshToken);
         res.status(HTTP_STATUS.OK).json({
             success: true,
             message: MESSAGES.TOKEN_REFRESHED_SUCCESSFULLY,
+            accessToken,
             user: {
                 id: user._id,
                 role: user.role,
@@ -515,7 +476,6 @@ const refreshToken = async (req, res) => {
             }
         });
     } catch (error) {
-        res.clearCookie("token");
         res.clearCookie("refreshToken");
         return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: MESSAGES.SESSION_EXPIRED_PLEASE_LOGIN_AGAIN });
     }

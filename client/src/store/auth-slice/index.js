@@ -6,7 +6,8 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 const initialState = {
     isAuthenticated: false,
     isLoading: true,
-    user: null
+    user: null,
+    token: null
 }
 
 export const registerUser = createAsyncThunk(
@@ -133,7 +134,10 @@ const authSlice = createSlice({
     reducers: {
         setUser: () => {
             
-         }
+         },
+        setToken: (state, action) => {
+            state.token = action.payload;
+        }
     },
     extraReducers: (builder) => {
         builder
@@ -157,11 +161,13 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.user = action.payload.success ? action.payload.user : null;
                 state.isAuthenticated = action.payload.success;
+                state.token = action.payload.success ? action.payload.accessToken : null;
             })
             .addCase(loginUser.rejected, (state) => {
                 state.isLoading = false;
                 state.user = null;
                 state.isAuthenticated = false;
+                state.token = null;
             })
 
             .addCase(checkAuth.pending, (state) => {
@@ -171,25 +177,29 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.user = action.payload.success ? action.payload.user : null;
                 state.isAuthenticated = action.payload.success;
+                state.token = action.payload.success ? action.payload.accessToken : null;
             })
             .addCase(checkAuth.rejected, (state) => {
                 state.isLoading = false;
                 state.user = null;
                 state.isAuthenticated = false;
+                state.token = null;
             })
 
             .addCase(logoutUser.fulfilled, (state) => {
                 state.isLoading = false;
                 state.user = null;
                 state.isAuthenticated = false;
+                state.token = null;
             })
             .addCase(verifyOtp.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.user = action.payload.success ? action.payload.user : null;
                 state.isAuthenticated = action.payload.success;
+                state.token = action.payload.success ? action.payload.accessToken : null;
             })
     }
 });
 
-export const { setUser } = authSlice.actions;
+export const { setUser, setToken } = authSlice.actions;
 export default authSlice.reducer;
