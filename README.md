@@ -93,10 +93,5 @@ This project is configured with **GitHub Actions** for automatic deployment to A
    - `EC2_SSH_KEY`: Your `.pem` private key.
 
 The workflow will automatically build the frontend and restart the backend using PM2 on your server.
-
-## 📄 License
-
-This project is licensed under the ISC License.
-
 ---
 Developed with ❤️ by [Muhammad Shamnad T](https://github.com/shamnxd)
