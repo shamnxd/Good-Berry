@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { background, product } from "@/assets/hero"
+import { 
+  background1, product1, 
+  background2, product2, 
+  background3, product3 
+} from "@/assets/hero"
 import { useNavigate } from "react-router-dom"
 import MESSAGES from '../../constants/messages';
 
@@ -9,22 +13,22 @@ import MESSAGES from '../../constants/messages';
 const banners = [
   {
     id: 1,
-    backgroundImage: background,
-    productImage: product,
+    backgroundImage: background1,
+    productImage: product1,
     title: MESSAGES.SOUR_NGREEN_APPLE_NICE_CREAM,
     subtitle: MESSAGES.IT_IS_A_LONG_ESTABLISHED_FACT_THAT_A_READER_WILL,
   },
   {
     id: 2,
-    backgroundImage: "/src/assets/hero/organic-slide-bg-2.jpg",
-    productImage: "/src/assets/hero/organic-slide-2-img-535x487.png",
+    backgroundImage: background2,
+    productImage: product2,
     title: MESSAGES.ORGANIC_NSUN_DRIED_NEXOTIC_FRUITS,
     subtitle: MESSAGES.IT_IS_A_LONG_ESTABLISHED_FACT_THAT_A_READER_WILL,
   },
   {
     id: 3,
-    backgroundImage: "/src/assets/hero/organic-slide-bg-3.jpg",
-    productImage: "/src/assets/hero/organic-slide-3-img-535x487.png",
+    backgroundImage: background3,
+    productImage: product3,
     title: MESSAGES.JUICE_NIS_THE_BEST_NDRINK_FOR_YOU,
     subtitle: MESSAGES.IT_IS_A_LONG_ESTABLISHED_FACT_THAT_A_READER_WILL,
   },
