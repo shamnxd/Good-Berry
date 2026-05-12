@@ -131,7 +131,7 @@ function AdminSideBar({ open, setOpen }) {
           </div>
         </SheetContent>
       </Sheet>
-      <aside className="hidden lg:flex w-72 flex-col border-r border-slate-100 bg-white fixed inset-y-0 left-0 z-50 shadow-sm">
+      <aside className="hidden lg:flex w-[250px] flex-col border-r border-slate-100 bg-white fixed inset-y-0 left-0 z-50 shadow-sm">
         <div className="h-20 flex items-center px-8 border-b border-slate-50">
           <div
             onClick={() => navigate("/admin/dashboard")}
