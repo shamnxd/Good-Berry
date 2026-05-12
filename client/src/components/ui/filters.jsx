@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react'
+import { Check, SlidersHorizontal } from 'lucide-react'
 import * as Slider from '@radix-ui/react-slider'
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -23,12 +23,13 @@ const flavors = [
   { id: 'chocolate', name: 'Chocolate', count: 35, color: '#8B4513' },
   { id: 'vanilla', name: 'Vanilla', count: 25, color: '#F3E5AB' },
   { id: 'mango', name: 'Mango', count: 18, color: '#FFD700' },
-  { id: 'mokup', name: 'Mokup', count: 28, color: '#90EE90' },
+  { id: 'blueberry', name: 'Blueberry', count: 28, color: '#90EE90' },
 ]
 
 const statuses = [
-  { id: 'on-sale', label: 'On sale' },
-  { id: 'in-stock', label: 'In stock' },
+  { id: 'Special Offers', label: 'Special Offers' },
+  { id: 'In stock', label: 'In stock' },
+  { id: 'New', label: 'New' },
 ]
 
 // Filter Components
@@ -40,7 +41,7 @@ export function PriceFilter({ value, onValueChange, onFilter }) {
       <Slider.Root
         className="relative flex w-full touch-none select-none items-center"
         value={value}
-        max={8200}
+        max={50000}
         step={1}
         onValueChange={onValueChange}
       >
@@ -99,27 +100,30 @@ export function FlavorFilter({ selectedFlavors, onFlavorChange }) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">FILTER BY FLAVOR</h3>
-      <div className="space-y-3" onClick={() => toast({ title: MESSAGES.UNDER_DEVELOPMENT, description: MESSAGES.THIS_FILTER_IS_UNDER_DEVELOPMENT })}>
+      <div className="space-y-3">
         {flavors.map((flavor) => (
           <button
             key={flavor.id}
             className="flex w-full items-center justify-between group"
-            onClick={() => onFlavorChange(flavor.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onFlavorChange(flavor.name);
+            }}
           >
             <div className="flex items-center gap-2">
               <div 
-                className="h-5 w-5 rounded-full" 
+                className='h-5 w-5 rounded-full' 
                 style={{ backgroundColor: flavor.color }}
               />
-              <span className="text-gray-600 group-hover:text-gray-900">{flavor.name}</span>
+              <span className={`transition-colors ${selectedFlavors.includes(flavor.name) ? 'text-black font-semibold' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                {flavor.name}
+              </span>
             </div>
-            {/* <span className={`text-sm ${
-              selectedFlavors.includes(flavor.id) 
-                ? 'bg-[#8CC63F] text-white' 
-                : 'bg-gray-100 text-gray-600'
-            } px-2 py-0.5 rounded-full`}>
-              {flavor.count}
-            </span> */}
+            {selectedFlavors.includes(flavor.name) && (
+              <div className="h-4 w-4 rounded-full bg-[#8CC63F] flex items-center justify-center" >
+                <Check className="text-white h-3 w-3 font-extrabold" />
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -134,17 +138,16 @@ export function StatusFilter({ selectedStatuses, onStatusChange }) {
       <h3 className="text-lg font-semibold">PRODUCT STATUS</h3>
       <div className="space-y-3">
         {statuses.map((status) => (
-          <div key={status.id} className="flex items-center space-x-2" onClick={() => toast({ title: MESSAGES.UNDER_DEVELOPMENT, description: MESSAGES.THIS_FILTER_IS_UNDER_DEVELOPMENT })}>
+          <div key={status.id} className="flex items-center space-x-2">
             <Checkbox
               id={status.id}
-              disabled
               checked={selectedStatuses.includes(status.id)}
               onCheckedChange={() => onStatusChange(status.id)}
-              className="border-gray-300 text-[#8CC63F] focus:ring-[#8CC63F]"
+              className="border-gray-300 text-[#8CC63F] data-[state=checked]:bg-[#8CC63F] data-[state=checked]:border-[#8CC63F]"
             />
             <Label
               htmlFor={status.id}
-              className="text-sm font-normal leading-none text-gray-600"
+              className={`text-sm font-normal leading-none cursor-pointer transition-colors ${selectedStatuses.includes(status.id) ? 'text-black font-medium' : 'text-gray-600'}`}
             >
               {status.label}
             </Label>
