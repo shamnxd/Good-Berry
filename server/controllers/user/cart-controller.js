@@ -44,7 +44,7 @@ const cartController = {
         return res.status(HTTP_STATUS.NOT_FOUND).json({ error: MESSAGES.PRODUCT_NOT_FOUND });
       }
 
-      const variant = await Variant.findOne({ productId: productId, title : flavor });
+      const variant = await Variant.findOne({ productId: productId, title : flavor, isListed: true });
 
       if (!variant) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({ 
@@ -171,7 +171,7 @@ const cartController = {
       }
 
       // Stock check
-      const variant = await Variant.findOne({ productId: itemId, title: flavor });
+      const variant = await Variant.findOne({ productId: itemId, title: flavor, isListed: true });
       if (variant) {
         const packSize = variant.packSizePricing.find(p => p.size === packageSize);
         if (packSize && quantity > packSize.quantity) {
@@ -261,7 +261,7 @@ const cartController = {
         const { productId: pId, packageSize: pSize, flavor: fTitle } = item;
         
         try {
-          const variant = await Variant.findOne({ productId: pId, title: fTitle });
+          const variant = await Variant.findOne({ productId: pId, title: fTitle, isListed: true });
           if (!variant) return { productId: pId, packageSize: pSize, flavor: fTitle, error: MESSAGES.VARIANT_NOT_FOUND };
 
           const packSize = variant.packSizePricing.find(pack => pack.size === pSize);

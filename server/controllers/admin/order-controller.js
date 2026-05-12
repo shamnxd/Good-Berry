@@ -104,7 +104,7 @@ const orderController = {
       if (status === 'cancelled') {
         order.items[itemIndex].cancellationReason = cancellationReason;
 
-        const variant = await Variant.findOne({ productId: productId });
+        const variant = await Variant.findOne({ productId: productId, title: order.items[itemIndex].flavor });
         if (variant) {
           const packSize = order.items[itemIndex].packageSize;
           const packSizeIndex = variant.packSizePricing.findIndex(
@@ -253,7 +253,7 @@ const orderController = {
       }
 
       // Update stock quantity
-      const variant = await Variant.findOne({ productId: productId });
+      const variant = await Variant.findOne({ productId: productId, title: item.flavor });
       if (variant) {
         const packSize = item.packageSize;
         const packSizeIndex = variant.packSizePricing.findIndex(

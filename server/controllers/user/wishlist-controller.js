@@ -16,7 +16,7 @@ exports.getWishlist = async (req, res) => {
         }
 
         const wishlistItems = wishlist.products
-            .filter(item => item.productId && !item.productId.unListed && item.variantId) 
+            .filter(item => item.productId && !item.productId.unListed && item.variantId && item.variantId.isListed) 
             .map(item => {
                 const variant = item.variantId;
                 const firstPackSize = variant.packSizePricing && variant.packSizePricing.length > 0 ? variant.packSizePricing[0] : null;
@@ -48,7 +48,7 @@ exports.addToWishlist = async (req, res) => {
         const { productId, variantId } = req.body;
 
         const product = await Product.findById(productId);
-        const variant = await Variant.findById(variantId);
+        const variant = await Variant.findOne({ _id: variantId, isListed: true });
 
         if (!product || !variant) {
             return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: MESSAGES.PRODUCT_OR_VARIANT_NOT_FOUND });
