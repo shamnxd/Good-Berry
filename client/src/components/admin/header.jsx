@@ -1,30 +1,53 @@
-import { AlignJustify, LogOut } from "lucide-react";
+import { AlignJustify, LogOut, Search, User } from "lucide-react";
 import { Button } from "../ui/button";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "@/store/auth-slice";
+import { Input } from "../ui/input";
+import { useLocation } from "react-router-dom";
 
 function AdminHeader({ setOpen }) {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const location = useLocation();
+
+  const currentPage = location.pathname.split("/").pop();
+  const title = currentPage ? currentPage.charAt(0).toUpperCase() + currentPage.slice(1) : "Dashboard";
 
   function handleLogout() {
     dispatch(logoutUser());
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-72 h-20 flex items-center justify-between px-6 lg:px-8 bg-white/80 backdrop-blur-md border-b border-slate-100 z-40">
-      <Button onClick={() => setOpen(true)} className="lg:hidden" variant="ghost" size="icon">
-        <AlignJustify className="h-6 w-6 text-slate-700" />
-        <span className="sr-only">Toggle Menu</span>
-      </Button>
-      <div className="flex flex-1 justify-end">
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="inline-flex gap-2 items-center rounded-lg px-4 py-2 text-sm font-medium border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-200 shadow-sm"
-        >
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Logout</span>
+    <header className="fixed top-0 right-0 left-0 lg:left-[250px] h-20 flex items-center justify-between px-6 lg:px-10 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 z-40">
+      <div className="flex items-center gap-4">
+        <Button onClick={() => setOpen(true)} className="lg:hidden" variant="ghost" size="icon">
+          <AlignJustify className="h-6 w-6 text-slate-700" />
         </Button>
+        <div className="hidden md:block">
+           <h2 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-center justify-end gap-4 lg:gap-6">
+        <div className="flex items-center gap-2 lg:gap-4 border-l border-slate-200 pl-4 lg:pl-6">
+          <div className="hidden lg:flex flex-col items-end">
+            <span className="text-sm font-bold text-slate-900">{user?.userName || "Admin User"}</span>
+            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{user?.role || "Administrator"}</span>
+          </div>
+          
+          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-[#8CC63F] border border-slate-200/50 shadow-sm">
+             <User size={20} />
+          </div>
+
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            size="icon"
+            className="rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
     </header>
   );

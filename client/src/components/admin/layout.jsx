@@ -14,7 +14,7 @@ function AdminLayout() {
       <div className="flex flex-col flex-1 w-full lg:pl-[250px] transition-all duration-300">
         <AdminHeader setOpen={setOpenSidebar} />
         
-        <main className="mt-[70px] flex w-full flex-1 flex-col p-2 md:p-3 lg:p-4">
+        <main className="mt-20 flex w-full flex-1 flex-col p-2 md:p-3 lg:p-4">
           <div className="mx-auto w-full max-w-[1400px]">
             <div className="mb-3">
               <AdminBreadcrumbs />
