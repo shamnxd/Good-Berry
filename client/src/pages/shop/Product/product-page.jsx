@@ -16,16 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ProductDetails from "./product-details";
 import RelatedProducts from "./related-products";
 import { useDispatch, useSelector } from "react-redux";
@@ -60,18 +53,14 @@ export default function ProductPage() {
   const flavors = pflavors || {};
   const flavorKeys = Object.keys(flavors);
 
-  const [selectedFlavor, setSelectedFlavor] = useState(flavorKeys[0] || "");
-  const [selectedImage, setSelectedImage] = useState(
-    flavorKeys.length > 0 ? flavors[selectedFlavor]?.images?.[0] : ""
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFlavor = searchParams.get("flavor");
+  const initialSize = searchParams.get("size");
+
+  const [selectedFlavor, setSelectedFlavor] = useState(initialFlavor || flavorKeys[0] || "");
+  const [selectedImage, setSelectedImage] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [packageSize, setPackageSize] = useState(
-    flavorKeys.length > 0 &&
-      flavors[selectedFlavor] &&
-      flavors[selectedFlavor].packageSizes
-      ? flavors[selectedFlavor].packageSizes[0]
-      : ""
-  );
+  const [packageSize, setPackageSize] = useState(initialSize || "");
   const [currentPrice, setCurrentPrice] = useState({
     price: 0,
     salePrice: 0,
@@ -82,7 +71,7 @@ export default function ProductPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [availableQuantity, setAvailableQuantity] = useState(0);
 
-  const flavor = flavorKeys.length > 0 ? flavors[selectedFlavor] : null;
+  const flavor = flavorKeys.length > 0 ? (flavors[selectedFlavor] || flavors[flavorKeys[0]]) : null;
 
   const calculateDiscount = (originalPrice, salePrice) => {
     if (!originalPrice || !salePrice) return 0;
@@ -109,35 +98,30 @@ export default function ProductPage() {
     return { status: "OUT STOCK", color: "text-red-600 border-red-600" };
   };
 
+  // Sync URL parameters to state and update pricing
   useEffect(() => {
-    if (flavorKeys.length > 0 && !selectedFlavor) {
-      // Find first flavor that has any size in stock
-      let initialFlavorKey = flavorKeys[0];
-      let initialSize = flavors[flavorKeys[0]].packageSizes[0];
+    if (flavorKeys.length > 0) {
+      const currentFlavorKey = selectedFlavor && flavors[selectedFlavor] ? selectedFlavor : flavorKeys[0];
+      const currentFlavor = flavors[currentFlavorKey];
       
-      const firstAvailable = flavorKeys.find(key => 
-        flavors[key].packSizePricing.some(p => p.quantity > 0)
-      );
+      const currentSize = packageSize && currentFlavor.packageSizes.includes(packageSize) 
+        ? packageSize 
+        : (currentFlavor.packSizePricing.find(p => p.quantity > 0)?.size || currentFlavor.packageSizes[0]);
 
-      if (firstAvailable) {
-        initialFlavorKey = firstAvailable;
-        const availablePack = flavors[firstAvailable].packSizePricing.find(p => p.quantity > 0);
-        initialSize = availablePack.size;
-      }
+      if (selectedFlavor !== currentFlavorKey) setSelectedFlavor(currentFlavorKey);
+      if (packageSize !== currentSize) setPackageSize(currentSize);
+      if (!selectedImage) setSelectedImage(currentFlavor.images[0]);
 
-      setSelectedFlavor(initialFlavorKey);
-      setSelectedImage(flavors[initialFlavorKey].images[0]);
-      setPackageSize(initialSize);
-
-      const initialPricing = flavors[initialFlavorKey].packSizePricing.find(
-        (p) => p.size === initialSize
-      );
+      const pricing = currentFlavor.packSizePricing.find(p => p.size === currentSize);
       setCurrentPrice({
-        price: initialPricing?.price || 0,
-        salePrice: initialPricing?.salePrice || 0,
+        price: pricing?.price || 0,
+        salePrice: pricing?.salePrice || 0,
       });
+
+      // Update URL params
+      setSearchParams({ flavor: currentFlavorKey, size: currentSize }, { replace: true });
     }
-  }, [pflavors]);
+  }, [pflavors, selectedFlavor, packageSize, setSearchParams]);
 
   useEffect(() => {
     const checkAvailableQuantity = async () => {
@@ -150,7 +134,12 @@ export default function ProductPage() {
               flavor: flavor.title,
             })
           ).unwrap();
-          setAvailableQuantity(response.data.quantity);
+          // Backend returns both:
+          // - quantity: total stock for this pack
+          // - availableQuantity: remaining stock after considering current cart items
+          setAvailableQuantity(
+            response.data?.availableQuantity ?? response.data?.quantity ?? 0
+          );
         } catch (error) {
           console.error("Error checking quantity:", error);
         }
@@ -207,7 +196,8 @@ export default function ProductPage() {
       return;
     }
 
-    if (totalQuantity > availableQuantity) {
+    // `availableQuantity` is "remaining after cart", so compare only the NEW qty being added
+    if (quantity > availableQuantity) {
       toast({
         title: MESSAGES.QUANTITY_LIMIT_REACHED,
         description: `Only ${availableQuantity} items are available in stock.`,
@@ -239,7 +229,9 @@ export default function ProductPage() {
         })
       ).unwrap();
 
-      setAvailableQuantity(response.data.quantity);
+      setAvailableQuantity(
+        response.data?.availableQuantity ?? response.data?.quantity ?? 0
+      );
       setIsAddingToCart(false);
       setAddedToCart(true);
       setIsCartOpen(true);
@@ -520,22 +512,23 @@ export default function ProductPage() {
 
           <div className="space-y-4">
             <div>
-              <Select
-                value={selectedFlavor}
-                onValueChange={(value) => handleFlavorChange(value)}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {flavor &&
-                    flavorKeys.map((flavorKey) => (
-                      <SelectItem key={flavorKey} value={flavorKey}>
-                        {flavors[flavorKey]?.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <div className="mb-2 text-sm font-medium">Flavor:</div>
+              <div className="flex flex-wrap gap-3">
+                {flavorKeys.map((flavorKey) => (
+                  <button
+                    key={flavorKey}
+                    onClick={() => handleFlavorChange(flavorKey)}
+                    className={cn(
+                      "rounded-md border px-4 py-2 text-sm font-medium transition-all",
+                      selectedFlavor === flavorKey
+                        ? "border-[#8CC63F] bg-[#8CC63F]/10 text-[#8CC63F]"
+                        : "hover:bg-muted border-input"
+                    )}
+                  >
+                    {flavors[flavorKey]?.title}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -550,6 +543,7 @@ export default function ProductPage() {
                       <button
                         key={size}
                         onClick={() => handlePackageSizeChange(size)}
+                        disabled={isOutOfStock}
                         className={cn(
                           "relative rounded-md border px-4 py-2 text-sm transition-all overflow-hidden",
                           packageSize === size
@@ -649,9 +643,9 @@ export default function ProductPage() {
             <p className="text-sm text-muted-foreground">
               Copy the link below to share this product with others.
             </p>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5">
-                <span className="text-sm text-muted-foreground truncate flex-1">
+            <div className="flex flex-col gap-3 w-full">
+              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2.5 w-full overflow-x-auto whitespace-nowrap no-scrollbar">
+                <span className="text-sm text-muted-foreground">
                   {window.location.href}
                 </span>
               </div>

@@ -19,7 +19,11 @@ const variantSchema = new mongoose.Schema({
     price: Number,
     salePrice: Number,
     quantity: Number
-  }]
+  }],
+  isListed: {
+    type: Boolean,
+    default: true
+  }
 });
 
 variantSchema.pre('save', async function(next) {

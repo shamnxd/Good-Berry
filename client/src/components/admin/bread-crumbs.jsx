@@ -14,7 +14,7 @@ export default function AdminBreadcrumbs() {
   const isAdmin = pathnames[0] === "admin";
 
   return (
-    <div className="py-4 px-4">
+    <div className="pt-4 px-4">
       <div className="container mx-auto">
         <nav className="flex justify-between items-center" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">

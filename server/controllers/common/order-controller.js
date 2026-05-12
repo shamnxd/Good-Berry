@@ -41,7 +41,7 @@ const orderController = {
       }
 
       for (const cartItem of cart.items) {
-        const variant = await Variant.findOne({ productId: cartItem.productId, title : cartItem.flavor });
+        const variant = await Variant.findOne({ productId: cartItem.productId, title : cartItem.flavor, isListed: true });
 
         if (!variant) {
           return res.status(HTTP_STATUS.BAD_REQUEST).json({ 

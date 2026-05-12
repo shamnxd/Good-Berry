@@ -187,12 +187,12 @@ export const checkQuantity = createAsyncThunk(
     try {
       const isBulk = Array.isArray(input);
       const payload = isBulk ? { items: input } : input;
-      
-      const response = await api.post(`${API_ENDPOINTS.CHECK_QUANTITY.BASE}`, 
-        payload, 
+
+      const response = await api.post(`${API_ENDPOINTS.COMMON.CHECK_QUANTITY}`,
+        payload,
         { withCredentials: true }
       );
-      
+
       return {
         isBulk,
         data: response.data,
@@ -210,7 +210,7 @@ export const getCoupons = createAsyncThunk(
   'cart/getCoupons',
   async () => {
     try {
-      const response = await api.get(API_ENDPOINTS.ADMIN.COUPONS, {
+      const response = await api.get(API_ENDPOINTS.USER.COUPONS, {
         withCredentials: true
       });
       return response.data;
@@ -229,8 +229,8 @@ const cartSlice = createSlice({
     loading: false,
     error: null,
     coupons: [],
-    availableQuantities: {}, 
-    quantityLoading: false, 
+    availableQuantities: {},
+    quantityLoading: false,
   },
   reducers: {
     clearCart: (state) => {
@@ -292,7 +292,7 @@ const cartSlice = createSlice({
       })
       .addCase(checkQuantity.fulfilled, (state, action) => {
         const { isBulk, data } = action.payload;
-        
+
         if (isBulk) {
           data.forEach(result => {
             if (!result.error) {
@@ -312,7 +312,7 @@ const cartSlice = createSlice({
             inCart: currentCartQuantity
           };
         }
-        
+
         state.quantityLoading = false;
         state.error = null;
       })

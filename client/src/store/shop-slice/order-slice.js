@@ -49,7 +49,7 @@ export const cancelOrderItem = createAsyncThunk(
   async ({ orderId, itemId, reason }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `${API_ENDPOINTS.USER.BASE}/order/${orderId}/cancel`,
+        API_ENDPOINTS.USER.ORDER_CANCEL(orderId),
         { itemId, reason },
         { withCredentials: true }
       );
@@ -65,7 +65,7 @@ export const returnOrderItem = createAsyncThunk(
   async ({ orderId, itemId, reason }, { rejectWithValue }) => {
     try {
       const response = await api.put(
-        `${API_ENDPOINTS.USER.BASE}/order/${orderId}/return`,
+        API_ENDPOINTS.USER.ORDER_RETURN(orderId),
         { itemId, reason },
         { withCredentials: true }
       );

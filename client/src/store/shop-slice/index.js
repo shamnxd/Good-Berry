@@ -33,10 +33,10 @@ export const featuredProducts = createAsyncThunk(
 
 export const getProducts = createAsyncThunk(
     "shop/getProducts",
-    async ({ page, limit, sort = 'featured', search = '', minPrice = 0, maxPrice = 100000, categories = ''}) => {
+    async ({ page, limit, sort = 'featured', search = '', minPrice = 0, maxPrice = 100000, categories = '', flavors = '', statuses = ''}) => {
       try {
         const response = await api.get(
-          `${API_ENDPOINTS.COMMON.PRODUCTS}?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}`
+          `${API_ENDPOINTS.COMMON.PRODUCTS}?page=${page}&limit=${limit}&sort=${sort}&search=${search}&minPrice=${minPrice}&maxPrice=${maxPrice}&categories=${categories}&flavors=${flavors}&statuses=${statuses}`
         );
         return response.data;
       } catch (error) {

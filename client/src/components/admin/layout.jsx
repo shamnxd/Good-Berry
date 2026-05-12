@@ -11,12 +11,12 @@ function AdminLayout() {
     <div className="flex min-h-screen w-full bg-slate-50/50">
       <AdminSideBar open={openSidebar} setOpen={setOpenSidebar} />
       
-      <div className="flex flex-col flex-1 w-full lg:pl-72 transition-all duration-300">
+      <div className="flex flex-col flex-1 w-full lg:pl-[250px] transition-all duration-300">
         <AdminHeader setOpen={setOpenSidebar} />
         
-        <main className="flex-1 flex flex-col p-4 md:p-6 lg:p-8 mt-20 w-full max-w-full">
-          <div className="w-full mx-auto">
-            <div className="mb-2">
+        <main className="mt-20 flex w-full flex-1 flex-col p-2 md:p-3 lg:p-4">
+          <div className="mx-auto w-full max-w-[1400px]">
+            <div className="mb-3">
               <AdminBreadcrumbs />
             </div>
             <div className="w-full overflow-x-auto pb-10">

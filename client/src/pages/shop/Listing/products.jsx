@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
+import { useSearchParams } from "react-router-dom"
 import { ChevronRight, Menu, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,11 +25,26 @@ const sortOptions = [
 ]
 
 export default function ShopPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Initialize state from URL or defaults
   const [view, setView] = useState("grid-4")
-  const [sort, setSort] = useState("featured")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const [sort, setSort] = useState(searchParams.get("sort") || "featured")
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page")) || 1)
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
+
+  const initialCategories = useMemo(() => searchParams.get("categories")?.split(",").filter(Boolean) || [], [searchParams])
+  const initialFlavors = useMemo(() => searchParams.get("flavors")?.split(",").filter(Boolean) || [], [searchParams])
+  const initialStatuses = useMemo(() => searchParams.get("statuses")?.split(",").filter(Boolean) || [], [searchParams])
+  const initialMinPrice = parseInt(searchParams.get("minPrice")) || 0
+  const initialMaxPrice = parseInt(searchParams.get("maxPrice")) || 100000
+
+  const [priceRange, setPriceRange] = useState([initialMinPrice, initialMaxPrice])
+  const [selectedCategories, setSelectedCategories] = useState(initialCategories)
+  const [selectedFlavors, setSelectedFlavors] = useState(initialFlavors)
+  const [selectedStatuses, setSelectedStatuses] = useState(initialStatuses)
+  const [filterTrigger, setFilterTrigger] = useState(0)
 
   useEffect(() => {
     const handleResize = () => {
@@ -53,11 +69,6 @@ export default function ShopPage() {
     return () => clearTimeout(handler)
   }, [searchTerm])
 
-  const [priceRange, setPriceRange] = useState([0, 8200])
-  const [selectedCategories, setSelectedCategories] = useState([])
-  const [selectedFlavors, setSelectedFlavors] = useState([])
-  const [selectedStatuses, setSelectedStatuses] = useState([])
-  const [filterTrigger, setFilterTrigger] = useState(0)
   const dispatch = useDispatch()
 
   const { products, pagination, loading } = useSelector((state) => state.shop)
@@ -65,6 +76,24 @@ export default function ShopPage() {
   useEffect(() => {
     dispatch(getCategories())
   }, [dispatch])
+
+  useEffect(() => {
+    const params = {}
+    
+    if (currentPage > 1) params.page = currentPage.toString()
+    if (sort !== "featured") params.sort = sort
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm
+    
+    // Only add price if it's not the default range
+    if (priceRange[0] !== 0) params.minPrice = priceRange[0].toString()
+    if (priceRange[1] !== 100000) params.maxPrice = priceRange[1].toString()
+    
+    if (selectedCategories.length > 0) params.categories = selectedCategories.join(",")
+    if (selectedFlavors.length > 0) params.flavors = selectedFlavors.join(",")
+    if (selectedStatuses.length > 0) params.statuses = selectedStatuses.join(",")
+
+    setSearchParams(params, { replace: true })
+  }, [currentPage, sort, debouncedSearchTerm, filterTrigger, setSearchParams])
 
   useEffect(() => {
     dispatch(
@@ -75,10 +104,12 @@ export default function ShopPage() {
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
         categories: selectedCategories,
+        flavors: selectedFlavors,
+        statuses: selectedStatuses,
         search: debouncedSearchTerm,
       }),
     )
-  }, [dispatch, currentPage, sort, filterTrigger, debouncedSearchTerm])
+  }, [dispatch, currentPage, sort, debouncedSearchTerm, filterTrigger])
 
   const handleApplyFilters = () => {
     setFilterTrigger(prev => prev + 1);
@@ -240,7 +271,10 @@ export default function ShopPage() {
                         key={i + 1}
                         variant={currentPage === i + 1 ? "default" : "outline"}
                         size="icon"
-                        onClick={() => setCurrentPage(i + 1)}
+                        onClick={() => {
+                          setCurrentPage(i + 1)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
                       >
                         {i + 1}
                       </Button>
@@ -248,7 +282,10 @@ export default function ShopPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      onClick={() => {
+                        setCurrentPage(currentPage + 1)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
                       disabled={currentPage === pagination.totalPages}
                     >
                       <ChevronRight className="h-4 w-4" />
