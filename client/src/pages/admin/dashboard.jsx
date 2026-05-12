@@ -7,6 +7,13 @@ import { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts"
 
+const metricColorClassMap = {
+  green: "text-green-600",
+  blue: "text-blue-600",
+  purple: "text-purple-600",
+  red: "text-red-600",
+}
+
 function OverviewSkeleton() {
   return (
     <div className="space-y-4">
@@ -153,12 +160,13 @@ function Top10Categories() {
 
 function MetricCard({ title, value, change, icon: Icon, color }) {
   const { status } = useSelector((state) => state.admin)
+  const textColorClass = metricColorClassMap[color] || "text-slate-600"
 
   return (
     <Card className="transition-all hover:shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 text-${color}-600`} />
+        <Icon className={`h-4 w-4 ${textColorClass}`} />
       </CardHeader>
       <CardContent>
         {status === "loading" ? (
@@ -172,7 +180,7 @@ function MetricCard({ title, value, change, icon: Icon, color }) {
               {title === "Total Revenue" ? "₹" : "+"}
               {value?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
             </div>
-            <p className={`text-xs text-${color}-600`}>
+            <p className={`text-xs ${textColorClass}`}>
               {change > 0 ? "+" : ""}
               {change}% from last month
             </p>

@@ -236,7 +236,7 @@ export default function CustomersPage() {
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedUser(null)}>No, keep it</Button>
-              <Button varient="primary" onClick={handleBlockUnblock}>Yes, 
+              <Button variant="default" onClick={handleBlockUnblock}>Yes, 
                 {selectedUser.isBlocked ? ' unblock' : ' block'}
               </Button>
             </DialogFooter>
