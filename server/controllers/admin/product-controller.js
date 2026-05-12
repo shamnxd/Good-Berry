@@ -19,6 +19,10 @@ const addProduct = async (req, res) => {
       return res.json({ message: MESSAGES.AT_LEAST_ONE_VARIANT_IS_REQUIRED });
     }
 
+    if (!variants.some(v => v.isListed !== false)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "At least one variant must be listed." });
+    }
+
     const newProduct = new Product({ name, description, isFeatured, category });
     const savedProduct = await newProduct.save();
 
@@ -71,19 +75,21 @@ const getAllProducts = async (req, res) => {
     const productsWithDetails = await Promise.all(
       products.map(async (product) => {
         const category = await Category.findOne({ _id: product.category });
-        const variants = await Variant.find({ productId: product._id });
+        const allVariants = await Variant.find({ productId: product._id });
+        const activeVariants = allVariants.filter(v => v.isListed);
 
-        const totalStock = variants.reduce((acc, variant) => 
+        const totalStock = allVariants.reduce((acc, variant) => 
           acc + variant.packSizePricing.reduce((sum, pack) => sum + (pack.quantity || 0), 0), 0);
 
         return {
           ...product._doc,
           category: category ? { name: category.name, status: category.status } : { name: "Unknown", status: "Unknown" },
-          variants,
-          image: variants[0]?.images[0] || '',
-          price: variants[0]?.packSizePricing[0]?.price || 0,
+          variants: allVariants,
+          image: (activeVariants[0] || allVariants[0])?.images[0] || '',
+          price: (activeVariants[0] || allVariants[0])?.packSizePricing[0]?.price || 0,
           totalStock,
-          variantCount: variants.length,
+          variantCount: allVariants.length,
+          activeVariantCount: activeVariants.length,
         };
       })
     );
@@ -152,6 +158,10 @@ const updateProduct = async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AT_LEAST_ONE_VARIANT_IS_REQUIRED });
     }
 
+    if (!variants.some(v => v.isListed !== false)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "At least one variant must be listed." });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.INVALID_PRODUCT_ID });
     }
@@ -166,20 +176,47 @@ const updateProduct = async (req, res) => {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.PRODUCT_NOT_FOUND });
     }
 
-    await Variant.deleteMany({ productId: id });
+    const existingVariants = await Variant.find({ productId: id });
+    const existingVariantIds = existingVariants.map(v => v._id.toString());
+    const incomingVariantIds = variants.filter(v => v._id).map(v => v._id.toString());
+
+    // Mark missing variants as deleted
+    await Variant.updateMany(
+      { 
+        productId: id, 
+        _id: { $nin: incomingVariantIds.map(vid => new mongoose.Types.ObjectId(vid)) } 
+      },
+      { isListed: false }
+    );
 
     const updatedVariants = await Promise.all(
       variants.map(async (variant) => {
-        const newVariant = new Variant({
-          productId: updatedProduct._id,
-          title: variant.title,
-          description: variant.description,
-          images: variant.images,
-          selectedPackSizes: variant.selectedPackSizes,
-          packSizePricing: variant.packSizePricing,
-        });
-
-        return await newVariant.save();
+        if (variant._id && mongoose.Types.ObjectId.isValid(variant._id)) {
+          // Update existing variant
+          return await Variant.findByIdAndUpdate(
+            variant._id,
+            {
+              title: variant.title,
+              description: variant.description,
+              images: variant.images,
+              selectedPackSizes: variant.selectedPackSizes,
+              packSizePricing: variant.packSizePricing,
+              isListed: variant.isListed !== false // Use the value from frontend, default to true
+            },
+            { new: true, runValidators: true }
+          );
+        } else {
+          // Create new variant
+          const newVariant = new Variant({
+            productId: updatedProduct._id,
+            title: variant.title,
+            description: variant.description,
+            images: variant.images,
+            selectedPackSizes: variant.selectedPackSizes,
+            packSizePricing: variant.packSizePricing,
+          });
+          return await newVariant.save();
+        }
       })
     );
 

@@ -66,10 +66,11 @@ export default function ProductForm() {
           setSelectedCategory(product.category);
           setIsFeatured(product.isFeatured);
 
-          // Transform and set variants
           const transformedVariants = variants.map((variant) => ({
+            _id: variant._id,
             title: variant.title,
             description: variant.description,
+            isListed: variant.isListed !== false, 
             images: variant.images.map((url) => ({
               preview: url,
               cloudinaryUrl: url,
@@ -95,8 +96,10 @@ export default function ProductForm() {
     setVariants((prev) => [
       ...prev,
       {
+        _id: null, 
         title: "",
         description: "",
+        isListed: true,
         images: [],
         selectedPackSizes: [],
         packSizePricing: [],
@@ -148,12 +151,10 @@ export default function ProductForm() {
         updatedVariants[variantIndex].selectedPackSizes || [];
       const isSelected = currentSizes.includes(size);
 
-      // Remove or add the size from selectedPackSizes
       updatedVariants[variantIndex].selectedPackSizes = isSelected
         ? currentSizes.filter((s) => s !== size)
         : [...currentSizes, size];
 
-      // Remove pricing for unselected size
       if (isSelected) {
         updatedVariants[variantIndex].packSizePricing = updatedVariants[
           variantIndex
@@ -257,6 +258,15 @@ export default function ProductForm() {
   const checkValidation = (e) => {
     e.preventDefault();
 
+    const hasListedVariant = variants.some((v) => v.isListed);
+    if (!hasListedVariant) {
+      toast({
+        title: "At least one variant must be listed (visible) for the product.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     for (let i = 0; i < variants.length; i++) {
       const variant = variants[i];
       if (
@@ -314,8 +324,10 @@ export default function ProductForm() {
       isFeatured,
       category: selectedCategory,
       variants: variants.map((variant) => ({
+        _id: variant._id,
         title: variant.title,
         description: variant.description,
+        isListed: variant.isListed, // Send isListed
         images: variant.images
           .filter((img) => !img.uploading)
           .map((img) => img.cloudinaryUrl),
@@ -490,8 +502,8 @@ export default function ProductForm() {
               <Accordion type="single" collapsible className="w-full">
                 {variants.map((variant, index) => (
                   <AccordionItem value={`item-${index}`} key={index}>
-                    <AccordionTrigger>
-                      {variant.title || `Variant ${index + 1}`}
+                    <AccordionTrigger className={!variant.isListed ? "text-gray-400" : ""}>
+                      {variant.title || `Variant ${index + 1}`} {!variant.isListed && <span className="ml-2 text-xs font-normal text-red-500">(Unlisted)</span>}
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="grid gap-4 mx-1">
@@ -614,16 +626,27 @@ export default function ProductForm() {
                           </div>
                         </div>
 
-                        <div className="flex justify-end">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="mt-4 w-[180px]"
-                          onClick={() => handleRemoveVariant(index)}
-                          >
-                          <Trash className="w-4 h-4" />
-                          Remove Variant
-                        </Button>
+                        <div className="flex justify-end mt-6">
+                          {variant._id ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`w-[180px] ${variant.isListed ? "text-red-600 border-red-200 hover:bg-red-50" : "text-green-600 border-green-200 hover:bg-green-50"}`}
+                              onClick={() => handleUpdateVariant(index, "isListed", !variant.isListed)}
+                            >
+                              {variant.isListed ? "Unlist Variant" : "List Variant"}
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="w-[180px]"
+                              onClick={() => handleRemoveVariant(index)}
+                            >
+                              <Trash className="w-4 h-4 mr-2" />
+                              Remove Variant
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </AccordionContent>
