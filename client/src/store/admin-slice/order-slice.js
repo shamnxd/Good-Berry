@@ -24,7 +24,7 @@ export const fetchOrderById = createAsyncThunk(
   'adminOrder/fetchOrderById',
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`${API_ENDPOINTS.ADMIN.BASE}/orders/${orderId}`, { withCredentials: true });
+      const response = await api.get(API_ENDPOINTS.ADMIN.ORDER(orderId), { withCredentials: true });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

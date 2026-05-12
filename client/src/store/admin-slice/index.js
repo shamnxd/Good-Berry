@@ -148,17 +148,11 @@ export const uploadToCloudinary = createAsyncThunk(
     formData.append("image", file);
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.COMMON.UPLOAD}`, {
-        method: "POST",
-        body: formData,
+      const response = await api.post(API_ENDPOINTS.COMMON.UPLOAD, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload image");
-      }
-
-      const data = await response.json();
-      return data;
+      return response.data;
     } catch (error) {
       console.error("Error uploading image:", error);
       throw error;

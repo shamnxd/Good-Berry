@@ -23,7 +23,7 @@ export const getUser = createAsyncThunk(
     "account/getUser",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await api.get(`${API_ENDPOINTS.USER.BASE}/`, { withCredentials: true });
+            const response = await api.get(API_ENDPOINTS.USER.BASE, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -35,7 +35,7 @@ export const updateUser = createAsyncThunk(
     "account/updateUser",
     async (data, { rejectWithValue }) => {
         try {
-            const response = await api.patch(`${API_ENDPOINTS.USER.BASE}/`, data, { withCredentials: true });
+            const response = await api.patch(API_ENDPOINTS.USER.BASE, data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
@@ -47,7 +47,7 @@ export const updatePassword = createAsyncThunk(
     "account/updatePassword",
     async (data, { rejectWithValue }) => {
         try {
-            const response = await api.patch(`${API_ENDPOINTS.USER.BASE}/change-password`, data, { withCredentials: true });
+            const response = await api.patch(API_ENDPOINTS.USER.CHANGE_PASSWORD, data, { withCredentials: true });
             return response.data;
         } catch (error) {
             return rejectWithValue(extractError(error));
