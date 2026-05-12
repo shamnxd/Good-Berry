@@ -41,7 +41,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge"; // Import Badge component
+import { Badge } from "@/components/ui/badge";
 
 export default function ProductsPage() {
   const dispatch = useDispatch();
@@ -234,7 +234,10 @@ export default function ProductsPage() {
                     ₹{product.price || 0}
                   </TableCell>
                   <TableCell className="px-5">
-                    {product.variantCount || 0}
+                    <div className="flex flex-col">
+                      <span className="font-medium text-green-600">{product.activeVariantCount || 0} Active</span>
+                      <span className="text-xs text-gray-500">{product.variantCount || 0} Total</span>
+                    </div>
                   </TableCell>
                   <TableCell className="px-3">
                     <span
@@ -378,7 +381,7 @@ export default function ProductsPage() {
                       >
                         No, keep it
                       </Button>
-                      <Button varient="primary" onClick={handleRemoveOffer}>
+                      <Button variant="default" onClick={handleRemoveOffer}>
                         Yes, remove offer
                       </Button>
                     </DialogFooter>
@@ -399,7 +402,7 @@ export default function ProductsPage() {
                       >
                         No, keep it
                       </Button>
-                      <Button varient="primary" onClick={handleAddOffer}>
+                      <Button variant="default" onClick={handleAddOffer}>
                         Yes, add offer
                       </Button>
                     </DialogFooter>
@@ -432,7 +435,7 @@ export default function ProductsPage() {
               >
                 No, keep it
               </Button>
-              <Button varient="primary" onClick={handleUnlist}>
+              <Button variant="default" onClick={handleUnlist}>
                 Yes,
                 {selectedProduct.unListed ? " list" : " unlist"}
               </Button>
