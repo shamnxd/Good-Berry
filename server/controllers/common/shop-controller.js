@@ -30,7 +30,7 @@ const getProductDetails = async (req, res) => {
     }
 
     console.log(product)
-    const variants = await Variant.find({ productId: id });
+    const variants = await Variant.find({ productId: id, isListed: true });
 
     const variantsFormatted = variants.reduce((acc, variant) => {
       acc[variant.title.toLowerCase().replace(/\s+/g, '')] = {
@@ -50,8 +50,19 @@ const getProductDetails = async (req, res) => {
       {
         $lookup: {
           from: 'variants',
-          localField: '_id',
-          foreignField: 'productId',
+          let: { productId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$productId', '$$productId'] },
+                    { $eq: ['$isListed', true] }
+                  ]
+                }
+              }
+            }
+          ],
           as: 'variants',
         },
       },
@@ -92,13 +103,18 @@ const getAllProducts = async (req, res) => {
       search = '',
       minPrice = 0,
       maxPrice = 1000000,
-      categories = ['']
+      categories = [''],
+      flavors = '',
+      statuses = ''
     } = req.query;
 
     const skip = (page - 1) * limit;
 
-    const categoryArray = typeof categories === 'string' ? categories.split(',') : categories;
+    const categoryArray = typeof categories === 'string' ? (categories ? categories.split(',') : []) : categories;
     const validCategoryIds = categoryArray.filter(cat => cat).map(cat => new mongoose.Types.ObjectId(cat));
+
+    const flavorArray = typeof flavors === 'string' ? (flavors ? flavors.split(',') : []) : flavors;
+    const statusArray = typeof statuses === 'string' ? (statuses ? statuses.split(',') : []) : statuses;
 
     const sortConfigurations = {
       'price-asc': { 'firstVariant.salePrice': 1 },
@@ -133,7 +149,10 @@ const getAllProducts = async (req, res) => {
       {
         $match: {
           unListed: false,
-          ...categoryFilter
+          ...categoryFilter,
+          ...(statusArray.includes('New') ? {
+            createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 2)) }
+          } : {})
         },
       },
       {
@@ -149,10 +168,54 @@ const getAllProducts = async (req, res) => {
       {
         $lookup: {
           from: "variants",
-          localField: "_id",
-          foreignField: "productId",
+          let: { productId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$productId", "$$productId"] },
+                    { $eq: ["$isListed", true] },
+                    ...(flavorArray.length > 0 ? [{ $in: ["$title", flavorArray] }] : []),
+                  ]
+                }
+              }
+            },
+            ...(statusArray.includes('In stock') ? [
+              {
+                $match: {
+                  "packSizePricing.quantity": { $gt: 0 }
+                }
+              }
+            ] : []),
+            ...(statusArray.includes('Special Offers') ? [
+              {
+                $match: {
+                  $expr: {
+                    $gt: [
+                      {
+                        $size: {
+                          $filter: {
+                            input: "$packSizePricing",
+                            as: "p",
+                            cond: { $lt: ["$$p.salePrice", "$$p.price"] }
+                          }
+                        }
+                      },
+                      0
+                    ]
+                  }
+                }
+              }
+            ] : [])
+          ],
           as: "variants",
         },
+      },
+      {
+        $match: {
+          variants: { $ne: [] }
+        }
       },
       {
         $addFields: {
@@ -215,6 +278,9 @@ const getAllProducts = async (req, res) => {
       $match: {
         unListed: false,
         ...categoryFilter,
+        ...(statusArray.includes('New') ? {
+          createdAt: { $gte: new Date(new Date().setDate(new Date().getDate() - 2)) }
+        } : {}),
         ...(search && {
           $or: [
             { name: { $regex: search, $options: 'i' } },
@@ -230,10 +296,54 @@ const getAllProducts = async (req, res) => {
       {
         $lookup: {
           from: "variants",
-          localField: "_id",
-          foreignField: "productId",
+          let: { productId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$productId", "$$productId"] },
+                    { $eq: ["$isListed", true] },
+                    ...(flavorArray.length > 0 ? [{ $in: ["$title", flavorArray] }] : []),
+                  ]
+                }
+              }
+            },
+            ...(statusArray.includes('In stock') ? [
+              {
+                $match: {
+                  "packSizePricing.quantity": { $gt: 0 }
+                }
+              }
+            ] : []),
+            ...(statusArray.includes('Special Offers') ? [
+              {
+                $match: {
+                  $expr: {
+                    $gt: [
+                      {
+                        $size: {
+                          $filter: {
+                            input: "$packSizePricing",
+                            as: "p",
+                            cond: { $lt: ["$$p.salePrice", "$$p.price"] }
+                          }
+                        }
+                      },
+                      0
+                    ]
+                  }
+                }
+              }
+            ] : [])
+          ],
           as: "variants",
         },
+      },
+      {
+        $match: {
+          variants: { $ne: [] }
+        }
       },
       {
         $addFields: {
