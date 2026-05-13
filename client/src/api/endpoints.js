@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     PRODUCT_OFFER: (id) => `/api/admin/products/${id}/offer`,
     COUPONS: '/api/admin/coupons',
     COUPON: (id) => `/api/admin/coupons/${id}`,
+    COUPON_TOGGLE: (id) => `/api/admin/coupons/${id}/toggle`,
     ORDERS: '/api/admin/orders',
     ORDER: (id) => `/api/admin/orders/${id}`,
     ORDER_ITEM_STATUS: (orderId, productId) => `/api/admin/orders/${orderId}/items/${productId}`,

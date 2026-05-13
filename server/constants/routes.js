@@ -11,6 +11,7 @@ const ROUTES = Object.freeze({
     PRODUCTS_BY_ID_OFFER: '/products/:id/offer',
     COUPONS: '/coupons',
     COUPONS_BY_ID: '/coupons/:id',
+    COUPONS_BY_ID_TOGGLE: '/coupons/:id/toggle',
     ORDERS: '/orders',
     ORDERS_BY_ID: '/orders/:id',
     ORDERS_BY_ORDERID_ITEMS_BY_PRODUCTID: '/orders/:orderId/items/:productId',

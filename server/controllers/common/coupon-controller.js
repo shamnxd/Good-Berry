@@ -123,25 +123,36 @@ const couponController = {
     }
   },
 
-  // Delete a coupon
-  deleteCoupon: async (req, res) => {
+  // Toggle coupon status
+  toggleCouponStatus: async (req, res) => {
     const { id } = req.params;
 
     try {
-      const deletedCoupon = await Coupon.findByIdAndDelete(id);
+      const coupon = await Coupon.findById(id);
 
-      if (!deletedCoupon) {
-        return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.COUPON_NOT_FOUND });
+      if (!coupon) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({ 
+          success: false,
+          message: MESSAGES.COUPON_NOT_FOUND 
+        });
       }
+
+      // Toggle status between active and inactive
+      coupon.status = coupon.status === 'active' ? 'inactive' : 'active';
+      await coupon.save();
 
       res.json({
         success: true,
-        message: MESSAGES.COUPON_DELETED_SUCCESSFULLY,
-        coupon: deletedCoupon,
+        message: `Coupon ${coupon.status === 'active' ? 'activated' : 'deactivated'} successfully`,
+        coupon,
       });
     } catch (error) {
-      console.error("Error deleting coupon:", error);
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.FAILED_TO_DELETE_COUPON, error: error.message });
+      console.error("Error toggling coupon status:", error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
+        success: false,
+        message: "Failed to toggle coupon status", 
+        error: error.message 
+      });
     }
   },
 

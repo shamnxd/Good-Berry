@@ -4,7 +4,6 @@ const couponSchema = new mongoose.Schema({
   couponId: { type: String },
   code: { type: String, required: true, unique: true },
   description: { type: String, required: true },
-  status: { type: String, required: true },
   discount: { type: Number, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

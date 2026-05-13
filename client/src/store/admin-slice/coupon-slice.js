@@ -22,10 +22,10 @@ export const updateCoupon = createAsyncThunk('coupons/updateCoupon', async ({ id
   return response.data;
 });
 
-export const deleteCoupon = createAsyncThunk('coupons/deleteCoupon', async (id, { dispatch }) => {
-  await api.delete(API_ENDPOINTS.ADMIN.COUPON(id), { withCredentials: true });
+export const toggleCouponStatus = createAsyncThunk('coupons/toggleCouponStatus', async (id, { dispatch }) => {
+  const response = await api.patch(API_ENDPOINTS.ADMIN.COUPON_TOGGLE(id), {}, { withCredentials: true });
   dispatch(fetchCoupons({ page: 1, search: '' }));
-  return id;
+  return response.data;
 });
 
 const couponSlice = createSlice({
@@ -62,8 +62,11 @@ const couponSlice = createSlice({
           state.coupons[index] = action.payload.coupon;
         }
       })
-      .addCase(deleteCoupon.fulfilled, (state, action) => {
-        state.coupons = state.coupons.filter(coupon => coupon._id !== action.payload);
+      .addCase(toggleCouponStatus.fulfilled, (state, action) => {
+        const index = state.coupons.findIndex(coupon => coupon._id === action.payload.coupon._id);
+        if (index !== -1) {
+          state.coupons[index] = action.payload.coupon;
+        }
       });
   },
 });

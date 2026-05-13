@@ -42,7 +42,7 @@ router.delete(ROUTES.ADMIN.PRODUCTS_BY_ID_OFFER, offerController.removeProductOf
 router.get(ROUTES.ADMIN.COUPONS, couponController.getAllCoupons);
 router.post(ROUTES.ADMIN.COUPONS, couponController.addCoupon);
 router.put(ROUTES.ADMIN.COUPONS_BY_ID, couponController.updateCoupon);
-router.delete(ROUTES.ADMIN.COUPONS_BY_ID, couponController.deleteCoupon);
+router.patch(ROUTES.ADMIN.COUPONS_BY_ID_TOGGLE, couponController.toggleCouponStatus);
 
 // Order
 router.get(ROUTES.ADMIN.ORDERS, orderController.getAllOrders);

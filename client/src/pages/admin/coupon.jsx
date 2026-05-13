@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { fetchCoupons, addCoupon, updateCoupon, deleteCoupon } from "@/store/admin-slice/coupon-slice";
+import { fetchCoupons, addCoupon, updateCoupon, toggleCouponStatus } from "@/store/admin-slice/coupon-slice";
 import { useToast } from "@/hooks/use-toast";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import PropTypes from "prop-types";
@@ -93,15 +93,13 @@ export default function CouponManagement() {
       });
   };
 
-  const handleDeleteCoupon = (id) => {
-    dispatch(deleteCoupon(id))
-      .then(() => {
+  const handleToggleCouponStatus = (id) => {
+    dispatch(toggleCouponStatus(id))
+      .then((response) => {
         toast({
           title: MESSAGES.SUCCESS,
-          description: MESSAGES.COUPON_DELETED_SUCCESSFULLY
+          description: response.payload.message
         });
-        setIsRemoveDialogOpen(false);
-        setSelectedCoupon(null);
       })
       .catch((error) => {
         toast({
@@ -231,13 +229,11 @@ export default function CouponManagement() {
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => {
-                        setIsRemoveDialogOpen(true);
-                        setSelectedCoupon(coupon._id);
-                      }}
+                      onClick={() => handleToggleCouponStatus(coupon._id)}
+                      disabled={coupon.status === 'expired'}
+                      className={coupon.status === 'active' ? "text-red-600" : "text-green-600"}
                     >
-                      Delete
+                      {coupon.status === 'active' ? 'Deactivate' : 'Activate'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -265,26 +261,7 @@ export default function CouponManagement() {
         </Button>
       </div>}
 
-      {selectedCoupon && (
-        <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="mb-3">Confirm Action</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove this coupon?
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
-                No, keep it
-              </Button>
-              <Button variant="destructive" onClick={() => handleDeleteCoupon(selectedCoupon)}>
-                Yes, Remove
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+
     </div>
   );
 }
