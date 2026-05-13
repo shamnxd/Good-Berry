@@ -191,11 +191,11 @@ const authMiddleware = async (req, res, next) => {
 const googleAuth = async (req, res) => {
     try {
         if (!req.user) {
-            return res.redirect('${process.env.CLIENT_URL}/auth/login?error=auth_failed');
+            return res.redirect(`${process.env.CLIENT_URL}/auth/login?error=auth_failed`);
         }
 
         if (req.user.isBlocked) {
-            return res.redirect('${process.env.CLIENT_URL}/auth/login?error=blocked_user');
+            return res.redirect(`${process.env.CLIENT_URL}/auth/login?error=blocked_user`);
         }
 
         const user = await User.findById(req.user._id);
@@ -206,11 +206,11 @@ const googleAuth = async (req, res) => {
 
         setTokenCookies(res, refreshToken);
 
-        return res.redirect('${process.env.CLIENT_URL}?login=success');
+        return res.redirect(`${process.env.CLIENT_URL}?login=success`);
 
     } catch (error) {
         console.error('Google auth error:', error);
-        return res.redirect('${process.env.CLIENT_URL}/auth/login?error=internal_error');
+        return res.redirect(`${process.env.CLIENT_URL}/auth/login?error=internal_error`);
     }
 };
 
