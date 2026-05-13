@@ -4,6 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import { forgetPassword } from "@/store/auth-slice";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { MailCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const initialState = {
   email: "",
@@ -11,6 +13,7 @@ const initialState = {
 
 function ForgetPassword() {
   const [formData, setFormData] = useState(initialState);
+  const [isSent, setIsSent] = useState(false);
   const dispatch = useDispatch();
   const { toast } = useToast();
 
@@ -19,6 +22,7 @@ function ForgetPassword() {
 
     dispatch(forgetPassword(formData.email)).then((data) => {
       if (data?.payload?.success) {
+        setIsSent(true);
         toast({
           title: data?.payload?.message,
         });
@@ -29,6 +33,34 @@ function ForgetPassword() {
         });
       }
     });
+  }
+
+  if (isSent) {
+    return (
+      <div className="mx-auto w-full max-w-[400px] px-2 text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="h-16 w-16 rounded-full bg-[#8CC63F]/10 flex items-center justify-center text-[#8CC63F]">
+            <MailCheck size={32} />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-gray-900">Check your email</h2>
+          <p className="text-sm text-muted-foreground px-4">
+            We've sent a password reset link to <span className="font-semibold text-gray-900">{formData.email}</span>. 
+            Please check your inbox and click the link to reset your password.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Button 
+            variant="outline" 
+            className="w-full rounded-xl border-gray-200"
+            onClick={() => setIsSent(false)}
+          >
+            Didn't receive the email? Try again
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

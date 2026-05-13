@@ -3,7 +3,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -18,8 +18,18 @@ export function VeryOtp() {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || "";
 
   const [totalSeconds, setTotalSeconds] = useState(119); // Set the initial timer value 
+
+  const maskEmail = (email) => {
+    if (!email) return "your email";
+    const [name, domain] = email.split("@");
+    if (name.length <= 2) return email;
+    const maskedName = name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
+    return `${maskedName}@${domain}`;
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -80,7 +90,10 @@ export function VeryOtp() {
 
   return (
     <div className="verify-otp mx-auto w-full" style={{ maxWidth: "310px" }}>
-      <h1 className="text-2xl font-extrabold text-gray-800 mb-8">Verify OTP</h1>
+      <h1 className="text-2xl font-extrabold text-gray-800 mb-2">Verify OTP</h1>
+      <p className="text-gray-500 text-sm mb-8">
+        Enter the 6-digit code sent to <span className="font-semibold text-gray-900">{maskEmail(email)}</span>
+      </p>
       <InputOTP
         maxLength={6}
         value={value}

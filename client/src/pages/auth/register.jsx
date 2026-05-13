@@ -75,7 +75,7 @@ function AuthRegister() {
         toast({
           title: data?.payload?.message,
         });
-        navigate("/auth/verify-email");
+        navigate("/auth/verify-email", { state: { email: formData.email } });
       } else {
         toast({
           title: data?.payload?.message,

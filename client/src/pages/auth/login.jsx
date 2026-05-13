@@ -88,7 +88,7 @@ function AuthLogin() {
         navigate('/');
       } else {
         if(data?.payload?.isVerify) {
-          navigate('/auth/verify-email');
+          navigate('/auth/verify-email', { state: { email: formData.email } });
           toast({
             title: data?.payload?.message
           });
