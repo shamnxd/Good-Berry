@@ -14,11 +14,25 @@ const initialState = {
 function ForgetPassword() {
   const [formData, setFormData] = useState(initialState);
   const [isSent, setIsSent] = useState(false);
+  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const { toast } = useToast();
 
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   function onSubmit(event) {
     event.preventDefault();
+
+    if (!validateForm()) return;
 
     dispatch(forgetPassword(formData.email)).then((data) => {
       if (data?.payload?.success) {
@@ -72,6 +86,7 @@ function ForgetPassword() {
         formData={formData}
         setFormData={setFormData}
         onSubmit={onSubmit}
+        errors={errors}
       />
     </div>
   );

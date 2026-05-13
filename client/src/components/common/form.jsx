@@ -10,9 +10,10 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText, formType }) {
+function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText, formType, errors = {} }) {
   function renderInputByComponentType(controlItem) {
     const value = formData[controlItem.name] || "";
+    const hasError = !!errors[controlItem.name];
 
     switch (controlItem.componentType) {
       case "input":
@@ -23,6 +24,7 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText,
             id={controlItem.name}
             type={controlItem.type}
             value={value}
+            className={hasError ? "border-red-500 focus-visible:ring-red-500" : ""}
             onChange={(e) =>
               setFormData({ ...formData, [e.target.name]: e.target.value })
             }
@@ -37,7 +39,7 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText,
             }
             value={value}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${hasError ? "border-red-500" : ""}`}>
               <SelectValue placeholder={controlItem.placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -59,6 +61,7 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText,
             placeholder={controlItem.placeholder}
             id={controlItem.name}
             value={value}
+            className={hasError ? "border-red-500 focus-visible:ring-red-500" : ""}
             onChange={(e) =>
               setFormData({ ...formData, [e.target.name]: e.target.value })
             }
@@ -73,6 +76,7 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText,
             id={controlItem.name}
             type={controlItem.type}
             value={value}
+            className={hasError ? "border-red-500 focus-visible:ring-red-500" : ""}
             onChange={(e) =>
               setFormData({ ...formData, [e.target.name]: e.target.value })
             }
@@ -90,6 +94,11 @@ function CommonForm({ formControls, formData, setFormData, onSubmit, buttonText,
               {control.label}
             </Label>
             {renderInputByComponentType(control)}
+            {errors[control.name] && (
+              <p className="text-[11px] text-red-500 font-medium ml-1">
+                {errors[control.name]}
+              </p>
+            )}
           </div>
         ))}
       </div>

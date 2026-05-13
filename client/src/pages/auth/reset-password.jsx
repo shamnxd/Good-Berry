@@ -15,6 +15,7 @@ const initialState = {
 
 function ResetPassword() {
   const [formData, setFormData] = useState(initialState);
+  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const { toast } = useToast();
   const location = useLocation();
@@ -22,6 +23,29 @@ function ResetPassword() {
 
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get("token");
+
+  const validateForm = () => {
+    let newErrors = {};
+    
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else {
+      if (formData.password.length < 8) {
+        newErrors.password = "Minimum 8 characters required";
+      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password)) {
+        newErrors.password = "Must include uppercase, lowercase, number and special character";
+      }
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     if (!token) {
@@ -36,13 +60,7 @@ function ResetPassword() {
   function onSubmit(event) {
     event.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: MESSAGES.PASSWORDS_DO_NOT_MATCH,
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     dispatch(resetPassword({ token, password: formData.password })).then((data) => {
       if (data?.payload?.success) {
@@ -68,6 +86,7 @@ function ResetPassword() {
         formData={formData}
         setFormData={setFormData}
         onSubmit={onSubmit}
+        errors={errors}
       />
     </div>
   );

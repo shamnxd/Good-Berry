@@ -29,10 +29,24 @@ const user = {
 
 function AuthLogin() {
   const [formData, setFormData] = useState(initialState);
+  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    if (!formData.password) newErrors.password = "Password is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     const loginSuccess = searchParams.get('login');
@@ -70,14 +84,7 @@ function AuthLogin() {
   function onSubmit(event) {
     event.preventDefault();
 
-    if (formData.email.trim() === "" && formData.password.trim() === "") {
-      toast({
-        title: MESSAGES.REQUIRED,
-        description: MESSAGES.PLEASE_FILL_IN_ALL_THE_REQUIRED_FIELDS,
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     dispatch(loginUser(formData)).then((data) => {
 
@@ -135,6 +142,7 @@ function AuthLogin() {
         setFormData={setFormData}
         onSubmit={onSubmit}
         formType="login"
+        errors={errors}
       />
       <p className="text-md text-center text-gray-900">
         Don&apos;t have an account

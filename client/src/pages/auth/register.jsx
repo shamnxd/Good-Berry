@@ -18,58 +18,42 @@ const initialState = {
 
 function AuthRegister() {
   const [formData, setFormData] = useState(initialState);
+  const [errors, setErrors] = useState({});
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const validateForm = () => {
+    let newErrors = {};
+    if (!formData.username.trim()) newErrors.username = "Name is required";
+    
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else {
+      if (formData.password.length < 8) {
+        newErrors.password = "Minimum 8 characters required";
+      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password)) {
+        newErrors.password = "Must include uppercase, lowercase, number and special character";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   
   
   function onSubmit(event) {
     event.preventDefault();
-    if(formData.email.trim() === "" && formData.password.trim() === "" && formData.username.trim() === ""){ 
-      toast({
-        title: MESSAGES.REQUIRED,
-        description: MESSAGES.PLEASE_FILL_IN_ALL_THE_REQUIRED_FIELDS_NAME_EMAIL_AND_PASSWORD,
-        variant: "destructive",
-      });
-      return
-    }
+    
+    if (!validateForm()) return;
 
-    if (formData.username.trim() === "") {
-      toast({
-        title: MESSAGES.MISSING_USERNAME,
-        description: MESSAGES.PLEASE_ENTER_YOUR_NAME,
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    if (formData.email.trim() === "") {
-      toast({
-        title: MESSAGES.MISSING_EMAIL,
-        description: MESSAGES.PLEASE_ENTER_A_VALID_EMAIL_ADDRESS,
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    if (formData.password.trim() === "") {
-      toast({
-        title: MESSAGES.MISSING_PASSWORD,
-        description: MESSAGES.PASSWORD_IS_REQUIRED,
-        variant: "destructive",
-      });
-      return;
-    }
-  
-    if (formData.password.length < 8) {
-      toast({
-        title: MESSAGES.WEAK_PASSWORD,
-        description: MESSAGES.PASSWORD_MUST_BE_AT_LEAST_8_CHARACTERS_LONG,
-        variant: "destructive",
-      });
-      return;
-    }
     dispatch(registerUser(formData)).then((data) => {
       if (data?.payload?.success) {
         toast({
@@ -117,6 +101,7 @@ function AuthRegister() {
         setFormData={setFormData}
         onSubmit={onSubmit}
         formType="register"
+        errors={errors}
       />
       <p className="mt-2 text-center text-md text-gray-900">
         Already have an account
