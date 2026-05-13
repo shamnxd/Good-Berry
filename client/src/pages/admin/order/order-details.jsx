@@ -10,11 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderById, updateOrderItemStatus, approveReturnRequest, rejectReturnRequest } from '@/store/admin-slice/order-slice';
+import { useToast } from '@/hooks/use-toast';
 
 function OrderDetails() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { toast } = useToast();
   const { orderDetails, isLoading, error } = useSelector((state) => state.adminOrder);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -275,6 +277,12 @@ function OrderDetails() {
                           ...prev,
                           item: { ...prev.item, status: value }
                         }));
+                      } else {
+                        toast({
+                          title: "Invalid Status Transition",
+                          description: `Cannot move status from ${editingItem.item.status} to ${value}`,
+                          variant: "destructive",
+                        });
                       }
                     }}
                   >
